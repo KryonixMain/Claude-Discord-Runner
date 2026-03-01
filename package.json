@@ -1,0 +1,10 @@
+{
+  "type": "module",
+  "scripts": {
+    "start": "node run-sessions.js",
+    "bot": "node discord-bot.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.16.0"
+  }
+}
