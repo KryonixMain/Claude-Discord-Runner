@@ -1,0 +1,35 @@
+{
+  "bot": {
+    "token": "",
+    "clientId": "",
+    "channelId": "",
+    "guildId": "",
+    "webhookUrl": "",
+    "locale": "en-US",
+    "webhookUrls": {
+      "default": "",
+      "security": "",
+      "progress": ""
+    }
+  },
+  "runner": {
+    "defaultModel": "claude-opus-4-5",
+    "maxTurns": 200,
+    "pauseMinutes": 360,
+    "autoSecurityFix": true,
+    "archiveOnComplete": true,
+    "claudePlan": "max20",
+    "skipPermissions": true,
+    "parallel": false,
+    "workDir": ""
+  },
+  "sessions": {
+    "count": 4
+  },
+  "logging": {
+    "keepLogs": 10
+  },
+  "dashboard": {
+    "port": 3000
+  }
+}

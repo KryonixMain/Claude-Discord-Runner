@@ -1,10 +1,29 @@
 {
+  "name": "claude-runner",
+  "version": "1.0.0",
+  "description": "Discord bot that orchestrates sequential Claude CLI sessions with monitoring, security audits, and a web dashboard",
   "type": "module",
+  "license": "MIT",
+  "keywords": [
+    "claude",
+    "discord-bot",
+    "automation",
+    "cli",
+    "session-runner",
+    "ai-agent"
+  ],
   "scripts": {
-    "start": "node run-sessions.js",
-    "bot": "node discord-bot.js"
+    "start": "node index.js",
+    "bot": "node index.js",
+    "run": "node run-sessions.js",
+    "run:dry": "node run-sessions.js --dry-run",
+    "run:reset": "node run-sessions.js --reset"
   },
   "dependencies": {
-    "discord.js": "^14.16.0"
+    "discord.js": "^14.16.0",
+    "express": "^5.2.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }

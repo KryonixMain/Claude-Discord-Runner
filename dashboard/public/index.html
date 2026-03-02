@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Claude Runner Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <div class="header-left">
+      <h1>Claude Runner</h1>
+      <span id="connection-badge" class="badge badge-offline">Offline</span>
+    </div>
+    <div class="header-right">
+      <span id="status-line" class="status-text">Loading...</span>
+      <span id="clock" class="clock"></span>
+    </div>
+  </header>
+
+  <main>
+    <!-- Status Cards -->
+    <section class="cards">
+      <div class="card">
+        <div class="card-label">Status</div>
+        <div class="card-value" id="card-status">—</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Progress</div>
+        <div class="card-value" id="card-progress">—</div>
+        <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+      </div>
+      <div class="card">
+        <div class="card-label">Model</div>
+        <div class="card-value" id="card-model">—</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Plan</div>
+        <div class="card-value" id="card-plan">—</div>
+      </div>
+    </section>
+
+    <!-- Command Buttons -->
+    <section class="commands">
+      <h2>Commands</h2>
+      <div class="btn-group">
+        <button class="btn btn-green"  data-cmd="start"        id="btn-start">Start</button>
+        <button class="btn btn-red"    data-cmd="stop"         id="btn-stop">Stop</button>
+        <button class="btn btn-yellow" data-cmd="pause"        id="btn-pause">Pause</button>
+        <button class="btn btn-green"  data-cmd="resume"       id="btn-resume">Resume</button>
+        <button class="btn btn-blue"   data-cmd="restart"      id="btn-restart">Restart</button>
+        <button class="btn btn-yellow" data-cmd="start-reset"  id="btn-reset-start">Start (Reset)</button>
+        <button class="btn btn-purple" data-cmd="security-fix" id="btn-security">Security Fix</button>
+      </div>
+      <div id="command-feedback" class="feedback hidden"></div>
+    </section>
+
+    <!-- Two-column layout -->
+    <div class="columns">
+      <!-- Sessions -->
+      <section class="panel">
+        <h2>Sessions</h2>
+        <div class="table-wrap">
+          <table id="sessions-table">
+            <thead>
+              <tr>
+                <th></th>
+                <th>Session</th>
+                <th>Prompts</th>
+                <th>Tokens (est.)</th>
+                <th>Completed</th>
+                <th>Duration</th>
+              </tr>
+            </thead>
+            <tbody id="sessions-body">
+              <tr><td colspan="6" class="muted">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <!-- Token Budget -->
+        <div id="token-budget" class="budget-bar hidden">
+          <div class="budget-label"><span id="budget-used">0</span> / <span id="budget-total">0</span> tokens</div>
+          <div class="progress-bar"><div class="progress-fill budget-fill" id="budget-fill"></div></div>
+          <div class="budget-meta" id="budget-meta"></div>
+        </div>
+      </section>
+
+      <!-- Logs -->
+      <section class="panel">
+        <h2>
+          Logs
+          <button class="btn btn-sm btn-blue" id="btn-refresh-logs">Refresh</button>
+        </h2>
+        <pre id="log-output" class="log-box">Loading...</pre>
+      </section>
+    </div>
+
+    <!-- Two-column: Security + Settings -->
+    <div class="columns">
+      <section class="panel">
+        <h2>Security</h2>
+        <div id="security-content" class="muted">Loading...</div>
+      </section>
+
+      <section class="panel">
+        <h2>Settings</h2>
+        <pre id="settings-content" class="settings-box">Loading...</pre>
+      </section>
+    </div>
+
+    <!-- Git Changes -->
+    <section class="panel">
+      <h2>Git Changes</h2>
+      <div id="git-content" class="muted">Loading...</div>
+    </section>
+  </main>
+
+  <footer>
+    <span>Claude Runner Dashboard</span>
+    <span id="auto-refresh-label">Auto-refresh: <strong>5s</strong></span>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

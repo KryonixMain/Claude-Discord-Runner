@@ -1,0 +1,380 @@
+/* ── Reset & Base ─────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:         #1a1b1e;
+  --bg-card:    #25262b;
+  --bg-panel:   #2c2e33;
+  --bg-input:   #1a1b1e;
+  --border:     #373a40;
+  --text:       #c1c2c5;
+  --text-dim:   #909296;
+  --text-bright:#e9ecef;
+  --accent:     #5865f2;
+  --green:      #57f287;
+  --red:        #ed4245;
+  --yellow:     #fee75c;
+  --purple:     #eb459e;
+  --blue:       #5865f2;
+  --font:       'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  --mono:       'Cascadia Code', 'Fira Code', 'JetBrains Mono', monospace;
+  --radius:     8px;
+}
+
+body {
+  font-family: var(--font);
+  background:  var(--bg);
+  color:       var(--text);
+  line-height: 1.5;
+  min-height:  100vh;
+}
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+header {
+  display:         flex;
+  justify-content: space-between;
+  align-items:     center;
+  padding:         16px 24px;
+  background:      var(--bg-card);
+  border-bottom:   1px solid var(--border);
+  position:        sticky;
+  top:             0;
+  z-index:         100;
+}
+
+.header-left {
+  display:     flex;
+  align-items: center;
+  gap:         12px;
+}
+
+.header-left h1 {
+  font-size:   1.25rem;
+  color:       var(--text-bright);
+  font-weight: 700;
+}
+
+.header-right {
+  display:     flex;
+  align-items: center;
+  gap:         16px;
+}
+
+.status-text {
+  font-size:   0.9rem;
+  color:       var(--text-dim);
+}
+
+.clock {
+  font-family: var(--mono);
+  font-size:   0.85rem;
+  color:       var(--text-dim);
+}
+
+/* ── Badges ──────────────────────────────────────────────────────────────── */
+.badge {
+  display:       inline-block;
+  padding:       2px 10px;
+  border-radius: 12px;
+  font-size:     0.75rem;
+  font-weight:   600;
+  text-transform:uppercase;
+  letter-spacing:0.5px;
+}
+.badge-online  { background: rgba(87,242,135,.15); color: var(--green); }
+.badge-offline { background: rgba(237,66,69,.15);  color: var(--red);   }
+
+/* ── Main ────────────────────────────────────────────────────────────────── */
+main {
+  max-width: 1400px;
+  margin:    0 auto;
+  padding:   24px;
+  display:   flex;
+  flex-direction: column;
+  gap:       20px;
+}
+
+/* ── Cards ────────────────────────────────────────────────────────────────── */
+.cards {
+  display:  grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap:      16px;
+}
+
+.card {
+  background:    var(--bg-card);
+  border:        1px solid var(--border);
+  border-radius: var(--radius);
+  padding:       16px 20px;
+}
+
+.card-label {
+  font-size:     0.8rem;
+  color:         var(--text-dim);
+  text-transform:uppercase;
+  letter-spacing:0.5px;
+  margin-bottom: 4px;
+}
+
+.card-value {
+  font-size:   1.4rem;
+  font-weight: 700;
+  color:       var(--text-bright);
+}
+
+/* ── Progress Bar ────────────────────────────────────────────────────────── */
+.progress-bar {
+  height:        6px;
+  background:    var(--bg);
+  border-radius: 3px;
+  margin-top:    10px;
+  overflow:      hidden;
+}
+
+.progress-fill {
+  height:        100%;
+  background:    var(--accent);
+  border-radius: 3px;
+  transition:    width 0.4s ease;
+  width:         0%;
+}
+
+.progress-fill.green  { background: var(--green); }
+.progress-fill.yellow { background: var(--yellow); }
+.progress-fill.red    { background: var(--red); }
+
+/* ── Commands ────────────────────────────────────────────────────────────── */
+.commands {
+  background:    var(--bg-card);
+  border:        1px solid var(--border);
+  border-radius: var(--radius);
+  padding:       20px;
+}
+
+.commands h2 {
+  font-size:     1rem;
+  color:         var(--text-bright);
+  margin-bottom: 12px;
+}
+
+.btn-group {
+  display:  flex;
+  flex-wrap:wrap;
+  gap:      10px;
+}
+
+.btn {
+  padding:       8px 20px;
+  border:        none;
+  border-radius: 6px;
+  font-size:     0.9rem;
+  font-weight:   600;
+  cursor:        pointer;
+  transition:    all 0.15s ease;
+  color:         #fff;
+}
+
+.btn:hover         { filter: brightness(1.15); transform: translateY(-1px); }
+.btn:active        { transform: translateY(0); }
+.btn:disabled      { opacity: 0.4; cursor: not-allowed; transform: none; filter: none; }
+.btn-green         { background: #248046; }
+.btn-red           { background: #da373c; }
+.btn-yellow        { background: #b58105; color: #fff; }
+.btn-blue          { background: var(--accent); }
+.btn-purple        { background: #9b59b6; }
+.btn-sm            { padding: 4px 12px; font-size: 0.8rem; }
+
+.feedback {
+  margin-top:    10px;
+  padding:       8px 14px;
+  border-radius: 6px;
+  font-size:     0.85rem;
+  font-weight:   500;
+}
+.feedback.ok    { background: rgba(87,242,135,.12); color: var(--green); }
+.feedback.err   { background: rgba(237,66,69,.12);  color: var(--red);   }
+.hidden         { display: none; }
+
+/* ── Columns ─────────────────────────────────────────────────────────────── */
+.columns {
+  display:  grid;
+  grid-template-columns: 1fr 1fr;
+  gap:      20px;
+}
+
+@media (max-width: 900px) {
+  .columns { grid-template-columns: 1fr; }
+}
+
+/* ── Panel ────────────────────────────────────────────────────────────────── */
+.panel {
+  background:    var(--bg-card);
+  border:        1px solid var(--border);
+  border-radius: var(--radius);
+  padding:       20px;
+}
+
+.panel h2 {
+  font-size:     1rem;
+  color:         var(--text-bright);
+  margin-bottom: 12px;
+  display:       flex;
+  align-items:   center;
+  gap:           10px;
+}
+
+/* ── Table ────────────────────────────────────────────────────────────────── */
+.table-wrap { overflow-x: auto; }
+
+table {
+  width:           100%;
+  border-collapse: collapse;
+  font-size:       0.85rem;
+}
+
+th {
+  text-align:    left;
+  padding:       8px 10px;
+  border-bottom: 1px solid var(--border);
+  color:         var(--text-dim);
+  font-weight:   600;
+  font-size:     0.75rem;
+  text-transform:uppercase;
+  letter-spacing:0.5px;
+}
+
+td {
+  padding:       8px 10px;
+  border-bottom: 1px solid rgba(55,58,64,.5);
+  color:         var(--text);
+}
+
+tr:hover td {
+  background: rgba(88,101,242,.06);
+}
+
+.muted { color: var(--text-dim); text-align: center; }
+
+/* ── Token Budget Bar ────────────────────────────────────────────────────── */
+.budget-bar {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.budget-label {
+  font-size: 0.8rem;
+  color:     var(--text-dim);
+  margin-bottom: 6px;
+}
+
+.budget-fill { background: var(--accent); }
+
+.budget-meta {
+  font-size:  0.75rem;
+  color:      var(--text-dim);
+  margin-top: 4px;
+}
+
+/* ── Log Box ─────────────────────────────────────────────────────────────── */
+.log-box {
+  background:    var(--bg-input);
+  border:        1px solid var(--border);
+  border-radius: 6px;
+  padding:       14px;
+  font-family:   var(--mono);
+  font-size:     0.78rem;
+  line-height:   1.6;
+  max-height:    400px;
+  overflow-y:    auto;
+  white-space:   pre-wrap;
+  word-break:    break-all;
+  color:         var(--text);
+}
+
+/* ── Settings Box ────────────────────────────────────────────────────────── */
+.settings-box {
+  background:    var(--bg-input);
+  border:        1px solid var(--border);
+  border-radius: 6px;
+  padding:       14px;
+  font-family:   var(--mono);
+  font-size:     0.78rem;
+  line-height:   1.6;
+  max-height:    400px;
+  overflow-y:    auto;
+  white-space:   pre-wrap;
+  color:         var(--text);
+}
+
+/* ── Security ────────────────────────────────────────────────────────────── */
+.security-item {
+  display:       flex;
+  align-items:   center;
+  gap:           8px;
+  padding:       6px 0;
+  font-size:     0.85rem;
+}
+
+.sec-badge {
+  display:       inline-block;
+  min-width:     22px;
+  text-align:    center;
+  padding:       2px 6px;
+  border-radius: 4px;
+  font-size:     0.75rem;
+  font-weight:   700;
+}
+
+.sec-critical { background: rgba(237,66,69,.2);  color: var(--red); }
+.sec-warning  { background: rgba(254,231,92,.15); color: var(--yellow); }
+.sec-info     { background: rgba(88,101,242,.15); color: var(--blue); }
+
+.security-summary {
+  display:     flex;
+  gap:         16px;
+  margin-top:  12px;
+  padding-top: 10px;
+  border-top:  1px solid var(--border);
+  font-size:   0.8rem;
+  color:       var(--text-dim);
+}
+
+/* ── Git Changes ─────────────────────────────────────────────────────────── */
+.git-file {
+  font-family: var(--mono);
+  font-size:   0.82rem;
+  padding:     4px 0;
+  color:       var(--text);
+}
+
+/* ── Footer ──────────────────────────────────────────────────────────────── */
+footer {
+  display:         flex;
+  justify-content: space-between;
+  padding:         12px 24px;
+  font-size:       0.75rem;
+  color:           var(--text-dim);
+  border-top:      1px solid var(--border);
+  margin-top:      20px;
+}
+
+/* ── Spinner for loading states on buttons ───────────────────────────────── */
+.btn.loading {
+  position: relative;
+  color: transparent;
+}
+.btn.loading::after {
+  content: "";
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  top: 50%;
+  left: 50%;
+  margin: -8px 0 0 -8px;
+  border: 2px solid rgba(255,255,255,.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin .6s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }

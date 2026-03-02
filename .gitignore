@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+
+# Bot secrets — NEVER commit real tokens
+bot/settings.json
+
+# Runtime data
+Logs/
+Security/
+Archive/
+.progress.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment
+.env
+.env.*

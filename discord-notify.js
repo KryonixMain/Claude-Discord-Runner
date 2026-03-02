@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
+import { createHash } from "crypto";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -9,25 +10,40 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 function resolveWebhookUrl() {
   if (process.env.DISCORD_WEBHOOK_URL) return process.env.DISCORD_WEBHOOK_URL;
 
-  const settingsPath = join(__dirname, "settings.json");
+  const settingsPath = join(__dirname, "bot", "settings.json");
   if (existsSync(settingsPath)) {
     try {
       const s = JSON.parse(readFileSync(settingsPath, "utf8"));
       if (s?.bot?.webhookUrl) return s.bot.webhookUrl;
-    } catch {
-      /* ignore */
+    } catch (err) {
+      console.warn("[Notify] Could not read settings for webhook:", err.message);
     }
   }
 
   return null;
 }
 
+function resolveWebhookUrlForEvent(category = "default") {
+  const settingsPath = join(__dirname, "bot", "settings.json");
+  if (existsSync(settingsPath)) {
+    try {
+      const s = JSON.parse(readFileSync(settingsPath, "utf8"));
+      const perEvent = s?.bot?.webhookUrls?.[category];
+      if (perEvent) return perEvent;
+    } catch (err) {
+      console.warn("[Notify] Could not read per-event webhook settings:", err.message);
+    }
+  }
+  return resolveWebhookUrl();
+}
+
 function resolveConfig() {
-  const settingsPath = join(__dirname, "settings.json");
+  const settingsPath = join(__dirname, "bot", "settings.json");
   if (!existsSync(settingsPath)) return {};
   try {
     return JSON.parse(readFileSync(settingsPath, "utf8"));
-  } catch {
+  } catch (err) {
+    console.warn("[Notify] Could not load config:", err.message);
     return {};
   }
 }
@@ -47,31 +63,136 @@ export const COLORS = {
 const BOT_NAME = "Claude Runner";
 const AVATAR_URL = "https://cdn.discordapp.com/embed/avatars/0.png";
 
+// ########################################################################### Dedup Guard ###########################################################################
+
+const _recentHashes = new Map();
+const DEDUP_WINDOW_MS = 10_000;
+
+function isDuplicate(payload) {
+  const hash = createHash("sha256").update(JSON.stringify(payload)).digest("hex");
+  const now = Date.now();
+
+  // Cleanup old entries
+  for (const [k, ts] of _recentHashes) {
+    if (now - ts > DEDUP_WINDOW_MS) _recentHashes.delete(k);
+  }
+
+  if (_recentHashes.has(hash)) return true;
+  _recentHashes.set(hash, now);
+  return false;
+}
+
+// ########################################################################### Redaction ###########################################################################
+
+const REDACT_PATTERNS = [
+  /(?:token|secret|key|password|apikey|api_key|auth|bearer|credential|jwt)[\s:="']+[A-Za-z0-9_\-./+=]{8,}/gi,
+  /Bearer\s+[A-Za-z0-9_\-./+=]{8,}/gi,
+  /ghp_[A-Za-z0-9]{36,}/g,                       // GitHub PAT
+  /sk-[A-Za-z0-9]{20,}/g,                         // OpenAI-style keys
+  /xox[bpas]-[A-Za-z0-9\-]{10,}/g,               // Slack tokens
+  /eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}/g,  // JWT tokens
+  /https:\/\/discord\.com\/api\/webhooks\/\d+\/[A-Za-z0-9_-]+/g, // Discord webhook URLs
+  /[A-Za-z0-9+/]{40,}={0,2}/g,                    // Long base64 strings (likely secrets)
+];
+
+function redactString(str) {
+  if (typeof str !== "string") return str;
+  let result = str;
+  for (const pattern of REDACT_PATTERNS) {
+    result = result.replace(pattern, "[REDACTED]");
+  }
+  return result;
+}
+
+function redactPayload(obj) {
+  if (typeof obj === "string") return redactString(obj);
+  if (Array.isArray(obj)) return obj.map(redactPayload);
+  if (obj && typeof obj === "object") {
+    const result = {};
+    for (const [key, value] of Object.entries(obj)) {
+      result[key] = redactPayload(value);
+    }
+    return result;
+  }
+  return obj;
+}
+
 // ########################################################################### Core Send ###########################################################################
 
-async function sendWebhook(payload) {
-  const url = resolveWebhookUrl();
+async function sendWebhook(payload, { category = "default" } = {}) {
+  // Redact sensitive data before sending
+  payload = redactPayload(payload);
+
+  if (isDuplicate(payload)) {
+    console.log("[Notify] Duplicate payload skipped (within 10s window)");
+    return false;
+  }
+
+  const url = resolveWebhookUrlForEvent(category);
 
   if (!url) {
     console.warn("[Notify] DISCORD_WEBHOOK_URL not set — notification skipped");
     return false;
   }
 
-  try {
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+  const MAX_RETRIES = 3;
+  const BASE_DELAY = 1000;
 
-    if (!res.ok) {
-      console.warn(`[Notify] Webhook failed: ${res.status} ${res.statusText}`);
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) return true;
+
+      if (res.status === 429) {
+        const retryAfter = Number(res.headers.get("retry-after") || "5") * 1000;
+        console.warn(`[Notify] Rate limited — retrying in ${retryAfter}ms`);
+        await new Promise((r) => setTimeout(r, retryAfter));
+        continue;
+      }
+
+      if (attempt < MAX_RETRIES) {
+        const delay = BASE_DELAY * Math.pow(2, attempt);
+        console.warn(`[Notify] Webhook failed (${res.status}) — retry ${attempt + 1}/${MAX_RETRIES} in ${delay}ms`);
+        await new Promise((r) => setTimeout(r, delay));
+        continue;
+      }
+
+      console.warn(`[Notify] Webhook failed after ${MAX_RETRIES} retries: ${res.status} ${res.statusText}`);
+      return false;
+    } catch (err) {
+      if (attempt < MAX_RETRIES) {
+        const delay = BASE_DELAY * Math.pow(2, attempt);
+        console.warn(`[Notify] Webhook error — retry ${attempt + 1}/${MAX_RETRIES} in ${delay}ms: ${err.message}`);
+        await new Promise((r) => setTimeout(r, delay));
+        continue;
+      }
+      console.warn(`[Notify] Webhook error after ${MAX_RETRIES} retries: ${err.message}`);
       return false;
     }
-    return true;
+  }
+  return false;
+}
+
+// ########################################################################### Health Check ###########################################################################
+
+export async function checkWebhookHealth() {
+  const url = resolveWebhookUrl();
+  if (!url) return { healthy: false, reason: "No webhook URL configured" };
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+    const res = await fetch(url, { method: "GET", signal: controller.signal });
+    clearTimeout(timeout);
+    if (res.ok) return { healthy: true, reason: `Status ${res.status}` };
+    return { healthy: false, reason: `Status ${res.status} ${res.statusText}` };
   } catch (err) {
-    console.warn(`[Notify] Webhook error: ${err.message}`);
-    return false;
+    return { healthy: false, reason: err.name === "AbortError" ? "Timeout (5s)" : err.message };
   }
 }
 
@@ -363,19 +484,51 @@ export async function notifyPromptComplete({
   promptIndex,
   totalPrompts,
   durationMs,
+  preview,
 }) {
   const secs = Math.floor((durationMs ?? 0) / 1000);
+  const fields = [
+    { name: "Duration", value: `${secs}s`, inline: true },
+    {
+      name: "Time",
+      value: new Date().toLocaleTimeString("en-US"),
+      inline: true,
+    },
+  ];
+  if (preview) {
+    fields.push({
+      name: "Preview",
+      value: `\`\`\`${preview.slice(0, 200)}\`\`\``,
+      inline: false,
+    });
+  }
   return notifyEmbed({
     title: `✔️ Prompt ${promptIndex}/${totalPrompts} completed`,
     description: `**${sessionName}**`,
     color: "success",
+    fields,
+  });
+}
+
+// ########################################################################### Timeout Warning ###########################################################################
+
+export async function notifyTimeoutWarning({
+  sessionName,
+  elapsedMs,
+  timeoutMs,
+}) {
+  const elapsedMin = Math.floor(elapsedMs / 60_000);
+  const timeoutMin = Math.floor(timeoutMs / 60_000);
+  const remainMin  = timeoutMin - elapsedMin;
+  const pct = Math.round((elapsedMs / timeoutMs) * 100);
+  return notifyEmbed({
+    title: `⏰ ${sessionName} — Timeout warning`,
+    description: `Session has used **${pct}%** of its timeout budget.`,
+    color: pct >= 90 ? "error" : "warning",
     fields: [
-      { name: "Duration", value: `${secs}s`, inline: true },
-      {
-        name: "Time",
-        value: new Date().toLocaleTimeString("en-US"),
-        inline: true,
-      },
+      { name: "Elapsed", value: `${elapsedMin} min`, inline: true },
+      { name: "Timeout", value: `${timeoutMin} min`, inline: true },
+      { name: "Remaining", value: `${remainMin} min`, inline: true },
     ],
   });
 }
