@@ -4,7 +4,7 @@ All notable changes to Claude Runner are documented here.
 
 ---
 
-## [1.0.0] — 2026-03-02
+## [1.0.1] — 2026-03-02
 
 Initial public release of Claude Runner — a Discord bot that orchestrates sequential Claude CLI sessions with monitoring, security audits, and a web dashboard.
 
