@@ -5,9 +5,8 @@ import { isRunning, isSecurityFixRunning } from "../state.js";
 
 const MAX_EMBED_LEN = 3800;
 const WATCH_INTERVAL_MS = 5000;
-const MAX_WATCH_DURATION_MS = 30 * 60 * 1000; // 30 minutes max
+const MAX_WATCH_DURATION_MS = 30 * 60 * 1000;
 
-// Track active watchers so only one per channel
 const activeWatchers = new Map();
 
 export async function handleWatch(interaction) {
@@ -43,7 +42,6 @@ export async function handleWatch(interaction) {
     return;
   }
 
-  // Check if already watching
   if (activeWatchers.has(interaction.channelId)) {
     await interaction.editReply({
       embeds: [
@@ -84,7 +82,6 @@ export async function handleWatch(interaction) {
     return;
   }
 
-  // Send initial message that we'll update
   const msg = await interaction.editReply({
     embeds: [
       new EmbedBuilder()
@@ -101,7 +98,6 @@ export async function handleWatch(interaction) {
 
   const interval = setInterval(async () => {
     try {
-      // Auto-stop conditions
       const elapsed = Date.now() - startedAt;
       if (elapsed > MAX_WATCH_DURATION_MS || (!isRunning() && !isSecurityFixRunning())) {
         clearInterval(interval);
@@ -123,21 +119,18 @@ export async function handleWatch(interaction) {
         return;
       }
 
-      // Find the current log file (may change if a new day rolls over)
       const currentLog = getLatestLogFile();
       if (!currentLog || !existsSync(currentLog)) return;
 
       const stat = statSync(currentLog);
-      if (stat.size === lastSize) return; // no new data
+      if (stat.size === lastSize) return;
 
       lastSize = stat.size;
 
-      // Read the tail of the log
       const content = readFileSync(currentLog, "utf8");
       const lines = content.split("\n").filter((l) => l.trim() !== "");
       const tail = lines.slice(-25).join("\n");
 
-      // Only update if content changed
       if (tail === lastContent) return;
       lastContent = tail;
 
@@ -163,9 +156,7 @@ export async function handleWatch(interaction) {
         ],
       });
     } catch (err) {
-      // Silently handle edit failures (message deleted, rate limited, etc.)
       if (err.code === 10008) {
-        // Unknown Message — user deleted the embed
         clearInterval(interval);
         activeWatchers.delete(interaction.channelId);
       }

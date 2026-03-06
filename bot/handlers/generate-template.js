@@ -21,8 +21,8 @@ SESSION OVERRIDE CONFIG
   "prompts": {
     "1": { "model": "claude-sonnet-4-5", "maxTurns": 50, "timeoutMs": 180000 },
     "2": { "model": "claude-sonnet-4-5", "maxTurns": 100, "timeoutMs": 300000 },
-    "3": { "model": "claude-sonnet-4-5", "maxTurns": 20, "timeoutMs": 120000 },
-    "4": { "model": "claude-sonnet-4-5", "maxTurns": 20, "timeoutMs": 120000 }
+    "3": { "model": "claude-sonnet-4-5", "maxTurns": 20, "timeoutMs": 4200000 },
+    "4": { "model": "claude-sonnet-4-5", "maxTurns": 20, "timeoutMs": 4200000 }
   }
 }
 -->
@@ -107,13 +107,13 @@ SESSION OVERRIDE CONFIG
 {
   "session": {
     "pauseAfterMs": 300000,
-    "defaultModel": "claude-opus-4-5"
+    "defaultModel": "claude-opus-4-6"
   },
   "prompts": {
-    "1": { "model": "claude-opus-4-5", "maxTurns": 150, "timeoutMs": 600000 },
-    "2": { "model": "claude-opus-4-5", "maxTurns": 100, "timeoutMs": 300000 },
-    "3": { "model": "claude-sonnet-4-5", "maxTurns": 20, "timeoutMs": 120000 },
-    "4": { "model": "claude-sonnet-4-5", "maxTurns": 20, "timeoutMs": 120000 }
+    "1": { "model": "claude-opus-4-6", "maxTurns": 150, "timeoutMs": 600000 },
+    "2": { "model": "claude-opus-4-6", "maxTurns": 100, "timeoutMs": 300000 },
+    "3": { "model": "claude-sonnet-4-5", "maxTurns": 20, "timeoutMs": 4200000 },
+    "4": { "model": "claude-sonnet-4-5", "maxTurns": 20, "timeoutMs": 4200000 }
   }
 }
 -->
@@ -198,12 +198,12 @@ SESSION OVERRIDE CONFIG
 {
   "session": {
     "pauseAfterMs": 300000,
-    "defaultModel": "claude-opus-4-5"
+    "defaultModel": "claude-opus-4-6"
   },
   "prompts": {
-    "1": { "model": "claude-opus-4-5", "maxTurns": 150, "timeoutMs": 600000 },
-    "2": { "model": "claude-sonnet-4-5", "maxTurns": 20, "timeoutMs": 120000 },
-    "3": { "model": "claude-sonnet-4-5", "maxTurns": 20, "timeoutMs": 120000 }
+    "1": { "model": "claude-opus-4-6", "maxTurns": 150, "timeoutMs": 600000 },
+    "2": { "model": "claude-sonnet-4-5", "maxTurns": 20, "timeoutMs": 4200000 },
+    "3": { "model": "claude-sonnet-4-5", "maxTurns": 20, "timeoutMs": 4200000 }
   }
 }
 -->
@@ -270,12 +270,12 @@ Write summary to Logs/summary-Session${num}.md.
 SESSION OVERRIDE CONFIG
 {
   "session": {
-    "pauseAfterMs": 120000,
+    "pauseAfterMs": 4200000,
     "defaultModel": "claude-sonnet-4-5"
   },
   "prompts": {
     "1": { "model": "claude-sonnet-4-5", "maxTurns": 80, "timeoutMs": 300000 },
-    "2": { "model": "claude-sonnet-4-5", "maxTurns": 20, "timeoutMs": 120000 }
+    "2": { "model": "claude-sonnet-4-5", "maxTurns": 20, "timeoutMs": 4200000 }
   }
 }
 -->
@@ -329,13 +329,13 @@ SESSION OVERRIDE CONFIG
 {
   "session": {
     "pauseAfterMs": 300000,
-    "defaultModel": "claude-opus-4-5"
+    "defaultModel": "claude-opus-4-6"
   },
   "prompts": {
-    "1": { "model": "claude-opus-4-5", "maxTurns": 100, "timeoutMs": 300000 },
-    "2": { "model": "claude-opus-4-5", "maxTurns": 100, "timeoutMs": 300000 },
-    "3": { "model": "claude-sonnet-4-5", "maxTurns": 20, "timeoutMs": 120000 },
-    "4": { "model": "claude-sonnet-4-5", "maxTurns": 20, "timeoutMs": 120000 }
+    "1": { "model": "claude-opus-4-6", "maxTurns": 100, "timeoutMs": 300000 },
+    "2": { "model": "claude-opus-4-6", "maxTurns": 100, "timeoutMs": 300000 },
+    "3": { "model": "claude-sonnet-4-5", "maxTurns": 20, "timeoutMs": 4200000 },
+    "4": { "model": "claude-sonnet-4-5", "maxTurns": 20, "timeoutMs": 4200000 }
   }
 }
 -->
@@ -414,12 +414,12 @@ SESSION OVERRIDE CONFIG
 {
   "session": {
     "pauseAfterMs": 300000,
-    "defaultModel": "claude-opus-4-5"
+    "defaultModel": "claude-opus-4-6"
   },
   "prompts": {
-    "1": { "model": "claude-opus-4-5", "maxTurns": 150, "timeoutMs": 600000 },
-    "2": { "model": "claude-opus-4-5", "maxTurns": 100, "timeoutMs": 300000 },
-    "3": { "model": "claude-sonnet-4-5", "maxTurns": 20, "timeoutMs": 120000 }
+    "1": { "model": "claude-opus-4-6", "maxTurns": 150, "timeoutMs": 600000 },
+    "2": { "model": "claude-opus-4-6", "maxTurns": 100, "timeoutMs": 300000 },
+    "3": { "model": "claude-sonnet-4-5", "maxTurns": 20, "timeoutMs": 4200000 }
   }
 }
 -->
@@ -499,7 +499,7 @@ const AGENT_TEMPLATES = {
 Activate when a prompt is tagged: [FULLSTACK]
 
 ## Default Configuration
-- Model: claude-opus-4-5
+- Model: claude-opus-4-6
 - Max Turns: 150
 - Risk Level: LOW_RISK (default)
 
@@ -553,7 +553,7 @@ Tasks:
 Activate when a prompt is tagged: [DATABASE]
 
 ## Default Configuration
-- Model: claude-opus-4-5
+- Model: claude-opus-4-6
 - Max Turns: 100
 - Risk Level: REVIEW_REQUIRED (default)
 
@@ -591,7 +591,7 @@ Activate when a prompt is tagged: [DATABASE]
 Activate when a prompt is tagged: [SECURITY]
 
 ## Default Configuration
-- Model: claude-opus-4-5
+- Model: claude-opus-4-6
 - Max Turns: 100
 - Risk Level: N/A (read-only)
 
@@ -646,7 +646,6 @@ Activate when a prompt is tagged: [MANAGER]
 export async function handleGenerateTemplate(interaction) {
   const which = interaction.options.getString("which");
 
-  // Check if it's a session template
   if (SESSION_TEMPLATES[which]) {
     const tmpl = SESSION_TEMPLATES[which];
     ensureDir(TEMPLATES_DIR);
@@ -680,7 +679,6 @@ export async function handleGenerateTemplate(interaction) {
     });
   }
 
-  // Check if it's an agent template
   if (AGENT_TEMPLATES[which]) {
     const tmpl = AGENT_TEMPLATES[which];
     ensureDir(AGENT_TEMPLATES_DIR);
@@ -713,7 +711,6 @@ export async function handleGenerateTemplate(interaction) {
     });
   }
 
-  // Unknown template
   const allOptions = [
     ...Object.entries(SESSION_TEMPLATES).map(([k, v]) => `\`${k}\` — ${v.description}`),
     ...Object.entries(AGENT_TEMPLATES).map(([k, v]) => `\`${k}\` — ${v.label} (agent)`),

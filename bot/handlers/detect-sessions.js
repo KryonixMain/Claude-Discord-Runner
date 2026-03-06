@@ -60,7 +60,7 @@ export async function handleDetectSessions(interaction) {
         .setColor(0x5865f2),
     );
     if (embeds.length >= 10) {
-      const remaining = calc.sessions.length - embeds.length + 1; // +1 for summary embed
+      const remaining = calc.sessions.length - embeds.length + 1;
       if (remaining > 0) {
         embeds.push(
           new EmbedBuilder()

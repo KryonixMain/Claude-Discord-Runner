@@ -13,7 +13,6 @@ export function archiveCompletedRun() {
   ensureDir(runArchive);
   for (const sub of ["Logs", "Security", "Sessions"]) ensureDir(join(runArchive, sub));
 
-  // Logs — move all files (output, error logs, diffs, per-prompt outputs)
   if (existsSync(LOG_DIR)) {
     for (const f of readdirSync(LOG_DIR)) {
       const src = join(LOG_DIR, f);
@@ -21,7 +20,6 @@ export function archiveCompletedRun() {
     }
   }
 
-  // Security — move all report files and fix outputs
   if (existsSync(SECURITY_DIR)) {
     for (const f of readdirSync(SECURITY_DIR)) {
       const src = join(SECURITY_DIR, f);
@@ -29,29 +27,24 @@ export function archiveCompletedRun() {
     }
   }
 
-  // Sessions — COPY session definition files (preserve originals for next run)
   if (existsSync(SESSION_DIR)) {
     for (const f of readdirSync(SESSION_DIR)) {
       const src = join(SESSION_DIR, f);
       if (!statSync(src).isFile()) continue;
       if (/^Session\d+\.md$/i.test(f)) {
-        // Copy session definitions — keep originals intact
         copyFileSync(src, join(runArchive, "Sessions", f));
       } else {
-        // Move any other files (output fragments, temp files)
         renameSync(src, join(runArchive, "Sessions", f));
       }
     }
   }
 
-  // Progress state — move
   let progressData = null;
   if (existsSync(STATE_FILE)) {
     try { progressData = JSON.parse(readFileSync(STATE_FILE, "utf8")); } catch (err) { console.warn("[archive] Could not parse progress state:", err.message); }
     renameSync(STATE_FILE, join(runArchive, `progress-${ts}.json`));
   }
 
-  // Generate immutable manifest
   const manifest = buildManifest(runArchive, ts, progressData);
   writeFileSync(join(runArchive, "manifest.json"), JSON.stringify(manifest, null, 2));
 
@@ -68,7 +61,6 @@ function hashFile(filePath) {
 function buildManifest(archivePath, ts, progressData) {
   const plan = CLAUDE_PLANS[getSetting("runner", "claudePlan")] ?? {};
 
-  // Collect file hashes
   const files = {};
   for (const sub of ["Logs", "Security", "Sessions"]) {
     const dir = join(archivePath, sub);
@@ -81,7 +73,6 @@ function buildManifest(archivePath, ts, progressData) {
     }
   }
 
-  // Extract session summary from progress data
   const sessions = {};
   if (progressData?.sessionDetails) {
     for (const [name, detail] of Object.entries(progressData.sessionDetails)) {

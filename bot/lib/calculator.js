@@ -1,15 +1,9 @@
 import { CLAUDE_PLANS, CHARS_PER_TOKEN, OUTPUT_RATIO, SAFETY_MARGIN } from "./plans.js";
 
-/** Estimated Claude output speed: ~500 output tokens per second */
 const TOKENS_PER_SECOND = 500;
 
-/**
- * Timeout safety multiplier applied to estimated duration.
- * 2.5x accounts for thinking time, retries, and tool use overhead.
- */
 const TIMEOUT_MULTIPLIER = 2.5;
 
-/** Minimum timeout per session (2 minutes) */
 const MIN_TIMEOUT_MS = 2 * 60_000;
 
 export function calculateSessionTimeouts(sessions, planKey) {

@@ -1,12 +1,11 @@
 import { existsSync, readFileSync, statSync } from "fs";
-import { join } from "path";
 import { spawnSync } from "child_process";
 import os from "os";
 import http from "http";
 import { EmbedBuilder } from "discord.js";
 import { SETTINGS_FILE, LOG_DIR, ARCHIVE_DIR, SESSION_DIR, SECURITY_DIR, CLAUDE_MD } from "../lib/paths.js";
 import { resolveClaudePath, getWorkDir } from "../lib/helpers.js";
-import { loadSettings, getSetting } from "../lib/settings.js";
+import { getSetting } from "../lib/settings.js";
 import { checkWebhookHealth } from "../../discord-notify.js";
 
 function checkClaudeCli() {

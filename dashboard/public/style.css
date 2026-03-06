@@ -84,20 +84,61 @@ header {
 .badge-online  { background: rgba(87,242,135,.15); color: var(--green); }
 .badge-offline { background: rgba(237,66,69,.15);  color: var(--red);   }
 
+/* ── Tab Navigation ──────────────────────────────────────────────────────── */
+.tabs {
+  display:      flex;
+  gap:          0;
+  background:   var(--bg-card);
+  border-bottom:1px solid var(--border);
+  padding:      0 24px;
+  overflow-x:   auto;
+}
+
+.tab {
+  padding:       12px 20px;
+  background:    transparent;
+  border:        none;
+  border-bottom: 2px solid transparent;
+  color:         var(--text-dim);
+  font-size:     0.9rem;
+  font-weight:   600;
+  cursor:        pointer;
+  transition:    all 0.15s ease;
+  white-space:   nowrap;
+}
+
+.tab:hover {
+  color:         var(--text-bright);
+  background:    rgba(88,101,242,.06);
+}
+
+.tab.active {
+  color:         var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+/* ── Tab Content ─────────────────────────────────────────────────────────── */
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
 /* ── Main ────────────────────────────────────────────────────────────────── */
 main {
   max-width: 1400px;
   margin:    0 auto;
   padding:   24px;
-  display:   flex;
-  flex-direction: column;
-  gap:       20px;
 }
 
 /* ── Cards ────────────────────────────────────────────────────────────────── */
 .cards {
   display:  grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap:      16px;
 }
 
@@ -117,10 +158,12 @@ main {
 }
 
 .card-value {
-  font-size:   1.4rem;
+  font-size:   1.35rem;
   font-weight: 700;
   color:       var(--text-bright);
 }
+
+.card-value.small { font-size: 1.1rem; }
 
 /* ── Progress Bar ────────────────────────────────────────────────────────── */
 .progress-bar {
@@ -223,6 +266,17 @@ main {
   gap:           10px;
 }
 
+.hint {
+  font-size:   0.82rem;
+  color:       var(--text-dim);
+  margin-bottom: 16px;
+  line-height: 1.6;
+  padding:     10px 14px;
+  background:  rgba(88,101,242,.06);
+  border-radius: 6px;
+  border-left: 3px solid var(--accent);
+}
+
 /* ── Table ────────────────────────────────────────────────────────────────── */
 .table-wrap { overflow-x: auto; }
 
@@ -301,7 +355,7 @@ tr:hover td {
   font-family:   var(--mono);
   font-size:     0.78rem;
   line-height:   1.6;
-  max-height:    400px;
+  max-height:    600px;
   overflow-y:    auto;
   white-space:   pre-wrap;
   color:         var(--text);
@@ -348,6 +402,471 @@ tr:hover td {
   color:       var(--text);
 }
 
+/* ── Timeout Section ─────────────────────────────────────────────────────── */
+.timeout-session {
+  background:    var(--bg-panel);
+  border:        1px solid var(--border);
+  border-radius: var(--radius);
+  padding:       16px;
+  margin-bottom: 16px;
+}
+
+.timeout-session-header {
+  display:     flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.timeout-session-title {
+  font-weight: 700;
+  color:       var(--text-bright);
+  font-size:   1rem;
+}
+
+.timeout-session-badges {
+  display: flex;
+  gap: 8px;
+}
+
+.timeout-badge {
+  padding:       3px 10px;
+  border-radius: 4px;
+  font-size:     0.75rem;
+  font-weight:   600;
+}
+
+.timeout-badge.timeout { background: rgba(88,101,242,.15); color: var(--accent); }
+.timeout-badge.pause   { background: rgba(254,231,92,.12); color: var(--yellow); }
+.timeout-badge.done    { background: rgba(87,242,135,.15); color: var(--green); }
+.timeout-badge.override  { background: rgba(235,69,158,.12); color: var(--purple); }
+.timeout-badge.sec-skip  { background: rgba(237,66,69,.15);  color: var(--red); }
+
+.timeout-prompts {
+  margin-bottom: 12px;
+}
+
+.timeout-prompt {
+  display:     flex;
+  justify-content: space-between;
+  align-items: center;
+  padding:     6px 0;
+  font-size:   0.83rem;
+  border-bottom: 1px solid rgba(55,58,64,.3);
+}
+
+.timeout-prompt:last-child { border-bottom: none; }
+
+.timeout-prompt-label {
+  color: var(--text);
+}
+
+.timeout-prompt-value {
+  font-family: var(--mono);
+  font-size:   0.8rem;
+  color:       var(--text-dim);
+}
+
+.timeout-prompt-src {
+  font-size: 0.7rem;
+  color:     var(--text-dim);
+  opacity:   0.7;
+}
+
+.timeout-edit {
+  display:     flex;
+  gap:         12px;
+  align-items: center;
+  flex-wrap:   wrap;
+  padding-top: 12px;
+  border-top:  1px solid var(--border);
+}
+
+.timeout-edit label {
+  font-size:   0.8rem;
+  color:       var(--text-dim);
+}
+
+.timeout-edit input {
+  width:         70px;
+  padding:       5px 8px;
+  border:        1px solid var(--border);
+  border-radius: 4px;
+  background:    var(--bg-input);
+  color:         var(--text-bright);
+  font-family:   var(--mono);
+  font-size:     0.82rem;
+  text-align:    right;
+}
+
+.timeout-edit input:focus {
+  outline:      none;
+  border-color: var(--accent);
+}
+
+.timeout-edit .btn { padding: 5px 14px; font-size: 0.8rem; }
+
+.security-toggle-label {
+  display:     flex;
+  align-items: center;
+  gap:         6px;
+  font-size:   0.8rem;
+  color:       var(--text-dim);
+  cursor:      pointer;
+  user-select: none;
+}
+
+.security-toggle {
+  accent-color: var(--green);
+  cursor:       pointer;
+}
+
+/* ── Global Pause Config ─────────────────────────────────────────────── */
+.global-pause-config {
+  display:     flex;
+  gap:         12px;
+  align-items: center;
+  flex-wrap:   wrap;
+}
+
+.global-pause-config label {
+  font-size:   0.85rem;
+  color:       var(--text-dim);
+  font-weight: 600;
+}
+
+.global-pause-config input {
+  width:         80px;
+  padding:       6px 10px;
+  border:        1px solid var(--border);
+  border-radius: 4px;
+  background:    var(--bg-input);
+  color:         var(--text-bright);
+  font-family:   var(--mono);
+  font-size:     0.85rem;
+  text-align:    right;
+}
+
+.global-pause-config input:focus {
+  outline:      none;
+  border-color: var(--accent);
+}
+
+.global-pause-feedback {
+  font-size:   0.8rem;
+  font-weight: 500;
+  transition:  opacity 0.3s ease;
+}
+
+/* ── Per-Prompt Timeout Inputs ──────────────────────────────────────── */
+.prompt-timeout-row {
+  display:     flex;
+  align-items: center;
+  gap:         8px;
+  padding:     6px 0;
+  font-size:   0.83rem;
+  border-bottom: 1px solid rgba(55,58,64,.3);
+}
+
+.prompt-timeout-row:last-child { border-bottom: none; }
+
+.prompt-timeout-row .timeout-prompt-label {
+  flex: 1;
+  color: var(--text);
+}
+
+.prompt-timeout-row .prompt-timeout-info {
+  display:     flex;
+  align-items: center;
+  gap:         8px;
+}
+
+.prompt-timeout-row input {
+  width:         60px;
+  padding:       4px 6px;
+  border:        1px solid var(--border);
+  border-radius: 4px;
+  background:    var(--bg-input);
+  color:         var(--text-bright);
+  font-family:   var(--mono);
+  font-size:     0.78rem;
+  text-align:    right;
+}
+
+.prompt-timeout-row input:focus {
+  outline:      none;
+  border-color: var(--accent);
+}
+
+.prompt-timeout-row .timeout-prompt-src {
+  font-size: 0.7rem;
+  color:     var(--text-dim);
+  opacity:   0.7;
+  min-width: 55px;
+}
+
+.timeouts-summary {
+  background:    var(--bg-panel);
+  border:        1px solid var(--border);
+  border-radius: var(--radius);
+  padding:       16px;
+  margin-top:    8px;
+  display:       flex;
+  gap:           32px;
+  flex-wrap:     wrap;
+}
+
+.timeouts-summary .stat {
+  display: flex;
+  flex-direction: column;
+}
+
+.timeouts-summary .stat-label {
+  font-size: 0.75rem;
+  color:     var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.timeouts-summary .stat-value {
+  font-size:   1.2rem;
+  font-weight: 700;
+  color:       var(--text-bright);
+}
+
+/* ── Analytics Charts ────────────────────────────────────────────────────── */
+.chart-container {
+  min-height: 200px;
+  display:    flex;
+  align-items: flex-end;
+  gap:        6px;
+  padding:    10px 0;
+}
+
+.chart-bar-wrap {
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  flex:           1;
+  min-width:      30px;
+  max-width:      60px;
+}
+
+.chart-bar {
+  width:         100%;
+  min-height:    4px;
+  border-radius: 4px 4px 0 0;
+  transition:    height 0.4s ease;
+  position:      relative;
+}
+
+.chart-bar:hover::after {
+  content:    attr(data-tooltip);
+  position:   absolute;
+  bottom:     calc(100% + 6px);
+  left:       50%;
+  transform:  translateX(-50%);
+  background: var(--bg-card);
+  border:     1px solid var(--border);
+  padding:    4px 8px;
+  border-radius: 4px;
+  font-size:  0.72rem;
+  white-space:nowrap;
+  color:      var(--text-bright);
+  z-index:    10;
+}
+
+.chart-label {
+  font-size:   0.65rem;
+  color:       var(--text-dim);
+  margin-top:  6px;
+  text-align:  center;
+  word-break:  break-all;
+  max-width:   60px;
+}
+
+.chart-legend {
+  display: flex;
+  gap: 16px;
+  margin-top: 10px;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+}
+
+.chart-legend-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+/* ── Archive Cards ───────────────────────────────────────────────────────── */
+.archive-card {
+  background:    var(--bg-panel);
+  border:        1px solid var(--border);
+  border-radius: var(--radius);
+  padding:       16px;
+  margin-bottom: 12px;
+  cursor:        pointer;
+  transition:    border-color 0.15s ease;
+}
+
+.archive-card:hover {
+  border-color: var(--accent);
+}
+
+.archive-card-header {
+  display:     flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.archive-card-title {
+  font-weight: 700;
+  color:       var(--text-bright);
+  font-size:   0.95rem;
+}
+
+.archive-card-status {
+  padding:       2px 10px;
+  border-radius: 4px;
+  font-size:     0.75rem;
+  font-weight:   600;
+}
+
+.archive-card-status.completed { background: rgba(87,242,135,.15); color: var(--green); }
+.archive-card-status.failed    { background: rgba(237,66,69,.15);  color: var(--red); }
+.archive-card-status.unknown   { background: rgba(144,146,150,.15); color: var(--text-dim); }
+
+.archive-card-meta {
+  display:  flex;
+  gap:      24px;
+  font-size:0.82rem;
+  color:    var(--text-dim);
+  flex-wrap: wrap;
+}
+
+.archive-card-meta strong { color: var(--text); }
+
+.archive-details {
+  display:    none;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.archive-details.open { display: block; }
+
+.archive-session-row {
+  display:     flex;
+  justify-content: space-between;
+  align-items: center;
+  padding:     6px 0;
+  font-size:   0.83rem;
+  border-bottom: 1px solid rgba(55,58,64,.3);
+}
+
+.archive-session-row:last-child { border-bottom: none; }
+
+/* ── Live Progress Panel ─────────────────────────────────────────────────── */
+.live-progress-panel {
+  border-left: 3px solid var(--green);
+  animation: live-glow 2s ease-in-out infinite;
+}
+
+@keyframes live-glow {
+  0%, 100% { border-left-color: var(--green); }
+  50%      { border-left-color: var(--accent); }
+}
+
+.live-progress-header {
+  display:     flex;
+  align-items: center;
+  gap:         12px;
+  margin-bottom: 8px;
+}
+
+.live-progress-header h2 {
+  margin:    0;
+  font-size: 1rem;
+}
+
+.live-indicator {
+  width:         10px;
+  height:        10px;
+  border-radius: 50%;
+  background:    var(--green);
+  display:       inline-block;
+  animation:     live-pulse 1.5s ease-in-out infinite;
+}
+
+.live-indicator.active {
+  background: var(--green);
+}
+
+@keyframes live-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.4; transform: scale(0.8); }
+}
+
+.live-model {
+  font-size:   0.78rem;
+  color:       var(--text-dim);
+  font-family: var(--mono);
+  background:  var(--bg);
+  padding:     2px 8px;
+  border-radius: 4px;
+}
+
+.live-prompt-info {
+  display:         flex;
+  justify-content: space-between;
+  align-items:     center;
+  font-size:       0.85rem;
+  margin-bottom:   6px;
+}
+
+.live-prompt-bar {
+  height:     6px;
+  margin-bottom: 6px;
+}
+
+.live-output-size {
+  font-size:   0.75rem;
+  font-family: var(--mono);
+}
+
+/* ── Claude Output Viewer ───────────────────────────────────────────────── */
+.claude-output-box {
+  max-height:  400px;
+  font-size:   0.78rem;
+  line-height: 1.45;
+  white-space:  pre-wrap;
+  word-break:   break-word;
+}
+
+/* ── Generated Prompts Tab ───────────────────────────────────────────────── */
+.prompts-toggle-row {
+  display:     flex;
+  align-items: center;
+  gap:         12px;
+  margin-bottom: 16px;
+}
+
+.prompt-viewer-meta {
+  font-size:   0.82rem;
+  color:       var(--text-dim);
+  margin-bottom: 8px;
+  font-family: var(--mono);
+}
+
+/* ── Audit Table ─────────────────────────────────────────────────────────── */
+.outcome-ok    { color: var(--green); font-weight: 600; }
+.outcome-error { color: var(--red);   font-weight: 600; }
+
 /* ── Footer ──────────────────────────────────────────────────────────────── */
 footer {
   display:         flex;
@@ -359,7 +878,7 @@ footer {
   margin-top:      20px;
 }
 
-/* ── Spinner for loading states on buttons ───────────────────────────────── */
+/* ── Spinner ─────────────────────────────────────────────────────────────── */
 .btn.loading {
   position: relative;
   color: transparent;
@@ -378,3 +897,25 @@ footer {
   animation: spin .6s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Empty State ─────────────────────────────────────────────────────────── */
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-dim);
+}
+
+.empty-state-icon {
+  font-size: 2.5rem;
+  margin-bottom: 10px;
+  opacity: 0.5;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .tabs { padding: 0 12px; }
+  .tab { padding: 10px 14px; font-size: 0.82rem; }
+  main { padding: 16px; }
+  .cards { grid-template-columns: repeat(2, 1fr); }
+  .timeout-edit { flex-direction: column; align-items: stretch; }
+}

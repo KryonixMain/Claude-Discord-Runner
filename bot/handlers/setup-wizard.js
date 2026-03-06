@@ -12,14 +12,13 @@ import { CLAUDE_PLANS } from "../lib/plans.js";
 import { SETTINGS_FILE, SESSION_DIR, CLAUDE_MD } from "../lib/paths.js";
 import { runSetup } from "../lib/session-setup.js";
 
-const TIMEOUT_MS = 120_000; // 2 minutes per step
+const TIMEOUT_MS = 120_000;
 
 export async function handleSetupWizard(interaction) {
   await interaction.deferReply();
 
   const settings = loadSettings();
 
-  // Step 1: Welcome + check current state
   const hasToken = !!settings.bot?.token;
   const hasChannel = !!settings.bot?.channelId;
   const hasWebhook = !!settings.bot?.webhookUrl;
@@ -57,7 +56,6 @@ export async function handleSetupWizard(interaction) {
   const row1 = new ActionRowBuilder().addComponents(planSelect);
   const msg = await interaction.editReply({ embeds: [welcomeEmbed], components: [row1] });
 
-  // Collect plan choice
   let planChoice;
   try {
     const planResp = await msg.awaitMessageComponent({
@@ -75,7 +73,6 @@ export async function handleSetupWizard(interaction) {
     return;
   }
 
-  // Step 2: Model selection
   const modelEmbed = new EmbedBuilder()
     .setTitle("Setup Wizard — Step 2/4: Default Model")
     .setDescription(
@@ -89,8 +86,8 @@ export async function handleSetupWizard(interaction) {
     .setCustomId("wizard_model")
     .setPlaceholder("Choose default model...")
     .addOptions(
-      { label: "Claude Opus 4.5", value: "claude-opus-4-5", description: "Most capable — complex coding and architecture" },
-      { label: "Claude Sonnet 4.5", value: "claude-sonnet-4-5", description: "Faster and cheaper — good for simpler tasks" },
+      { label: "Claude Opus 4.6", value: "claude-opus-4-6", description: "Most capable — complex coding and architecture" },
+      { label: "Claude Sonnet 4.6", value: "claude-sonnet-4-5", description: "Faster and cheaper — good for simpler tasks" },
     );
 
   const row2 = new ActionRowBuilder().addComponents(modelSelect);
@@ -113,7 +110,6 @@ export async function handleSetupWizard(interaction) {
     return;
   }
 
-  // Step 3: Permissions
   const permEmbed = new EmbedBuilder()
     .setTitle("Setup Wizard — Step 3/4: Permissions")
     .setDescription(
@@ -149,7 +145,6 @@ export async function handleSetupWizard(interaction) {
     return;
   }
 
-  // Step 4: Confirm and apply
   const confirmEmbed = new EmbedBuilder()
     .setTitle("Setup Wizard — Step 4/4: Confirm")
     .setDescription(
@@ -198,14 +193,12 @@ export async function handleSetupWizard(interaction) {
     return;
   }
 
-  // Apply settings
   const s = loadSettings();
   s.runner.claudePlan = planChoice;
   s.runner.defaultModel = modelChoice;
   s.runner.skipPermissions = skipPerms;
   saveSettings(s);
 
-  // Run the standard setup
   const created = runSetup(false, planChoice);
 
   const resultEmbed = new EmbedBuilder()

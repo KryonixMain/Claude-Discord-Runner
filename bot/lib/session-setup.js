@@ -3,11 +3,7 @@ import { basename, join, resolve } from "path";
 import { LOG_DIR, PROJECT_DIR, SECURITY_DIR, SESSION_DIR, ARCHIVE_DIR, SETTINGS_FILE, CLAUDE_MD } from "./paths.js";
 import { CLAUDE_PLANS, DEFAULT_SETTINGS } from "./plans.js";
 import { getSetting, saveSettings, loadSettings } from "./settings.js";
-import { ensureDir } from "./helpers.js";
 
-/**
- * Build the Working Directory block appended to CLAUDE.md.
- */
 function buildWorkDirBlock(workDir) {
   return [
     "",
@@ -24,10 +20,6 @@ function buildWorkDirBlock(workDir) {
   ].join("\n");
 }
 
-/**
- * Write or update CLAUDE.md with the current workDir.
- * Replaces the Working Directory section if it already exists.
- */
 export function updateClaudeMdWorkDir(workDir) {
   const resolved = resolve(workDir || PROJECT_DIR);
   const template = readFileSync(new URL("./claude-md-template.txt", import.meta.url), "utf8");
@@ -38,7 +30,6 @@ export function updateClaudeMdWorkDir(workDir) {
     return true;
   }
 
-  // Replace existing Working Directory section
   const current = readFileSync(CLAUDE_MD, "utf8");
   const sectionRegex = /\n---\n\n## Working Directory\n[\s\S]*$/;
   if (sectionRegex.test(current)) {
@@ -72,9 +63,9 @@ export function buildSessionTemplate(sessionNumber, withOverride) {
     "<!--",
     "SESSION OVERRIDE CONFIG",
     JSON.stringify({
-      session: { pauseAfterMs: 300_000, defaultModel: "claude-opus-4-5" },
+      session: { pauseAfterMs: 300_000, defaultModel: "claude-opus-4-6" },
       prompts: {
-        1: { model: "claude-opus-4-5",  maxTurns: 100, timeoutMs: 120_000 },
+        1: { model: "claude-opus-4-6",  maxTurns: 100, timeoutMs: 120_000 },
         2: { model: "claude-sonnet-4-5", maxTurns: 20,  timeoutMs: 120_000 },
       },
     }, null, 2),
@@ -91,37 +82,79 @@ export function applyTimeoutsToSessionFile(filePath, recommendedTimeoutMs, promp
 
   const plan    = CLAUDE_PLANS[planKey] ?? CLAUDE_PLANS.max20;
   const content = readFileSync(filePath, "utf8");
-  const prompts = {};
 
+  // Parse existing override to preserve dependsOn, waitForFile, and other custom props
+  const existingOverride = parseExistingOverride(content);
+
+  const prompts = {};
   for (let i = 1; i <= (promptCount || 3); i++) {
+    const existing = existingOverride.prompts?.[String(i)] ?? {};
     prompts[String(i)] = {
-      model:     plan.label.includes("20") ? "claude-opus-4-5" : "claude-sonnet-4-5",
-      maxTurns:  getSetting("runner", "maxTurns"),
-      timeoutMs: recommendedTimeoutMs,
+      model:     existing.model     ?? (plan.label.includes("20") ? "claude-opus-4-6" : "claude-sonnet-4-5"),
+      maxTurns:  existing.maxTurns  ?? getSetting("runner", "maxTurns"),
+      timeoutMs: existing.timeoutMs ?? recommendedTimeoutMs,
+      // Preserve waitForFile from existing override
+      ...(existing.waitForFile ? { waitForFile: existing.waitForFile } : {}),
     };
   }
 
-  const overrideJson   = JSON.stringify({
-    session: {
-      pauseAfterMs: getSetting("runner", "pauseMinutes") * 60_000,
-      defaultModel: getSetting("runner", "defaultModel"),
-    },
-    prompts,
-  }, null, 2);
+  const sessionConfig = {
+    pauseAfterMs: existingOverride.session?.pauseAfterMs ?? getSetting("runner", "pauseMinutes") * 60_000,
+    defaultModel: existingOverride.session?.defaultModel ?? getSetting("runner", "defaultModel"),
+    // Preserve dependsOn from existing override
+    ...(existingOverride.session?.dependsOn ? { dependsOn: existingOverride.session.dependsOn } : {}),
+    // Preserve waitForFile at session level
+    ...(existingOverride.session?.waitForFile ? { waitForFile: existingOverride.session.waitForFile } : {}),
+  };
 
+  const overrideJson  = JSON.stringify({ session: sessionConfig, prompts }, null, 2);
   const overrideBlock = `<!--\nSESSION OVERRIDE CONFIG\n${overrideJson}\n-->\n\n`;
-  const cleaned       = content.replace(/<!--\nSESSION OVERRIDE CONFIG[\s\S]*?-->\n\n/, "");
+  // Remove ALL existing override blocks (global flag)
+  const cleaned       = content.replace(/<!--\r?\nSESSION OVERRIDE CONFIG[\s\S]*?-->\r?\n?\r?\n?/g, "");
   writeFileSync(filePath, overrideBlock + cleaned);
   return true;
+}
+
+/** Parse ALL SESSION OVERRIDE CONFIG blocks and merge them (preserves dependsOn, waitForFile from any block) */
+function parseExistingOverride(content) {
+  const allMatches = [...content.matchAll(/<!--\r?\nSESSION OVERRIDE CONFIG\r?\n([\s\S]*?)-->/g)];
+  if (allMatches.length === 0) return {};
+
+  let merged = {};
+  for (const m of allMatches) {
+    try {
+      const parsed = JSON.parse(m[1]);
+      merged.session = { ...merged.session, ...parsed.session };
+      merged.prompts = merged.prompts || {};
+      if (parsed.prompts) {
+        for (const [k, v] of Object.entries(parsed.prompts)) {
+          merged.prompts[k] = { ...merged.prompts[k], ...v };
+        }
+      }
+    } catch { /* ignore malformed block */ }
+  }
+  return merged;
 }
 
 export function runSetup(withOverride = false, planKey = null) {
   const created = [];
 
+  // Create bot runtime dirs (now inside workDir)
   for (const dir of [LOG_DIR, SECURITY_DIR, SESSION_DIR, ARCHIVE_DIR]) {
     if (!existsSync(dir)) {
       mkdirSync(dir, { recursive: true });
       created.push(`📁 ${basename(dir)}/`);
+    }
+  }
+
+  // Create workspace communication dirs inside workDir
+  const workDir = resolve(getSetting("runner", "workDir") || PROJECT_DIR);
+  const workspaceDirs = ["tasks", "plans", "inbox", "status", "review", "locks", "Learnings", "Agents"];
+  for (const sub of workspaceDirs) {
+    const dir = join(workDir, sub);
+    if (!existsSync(dir)) {
+      mkdirSync(dir, { recursive: true });
+      created.push(`📁 ${sub}/`);
     }
   }
 
@@ -130,7 +163,6 @@ export function runSetup(withOverride = false, planKey = null) {
     created.push("⚙️ settings.json");
   }
 
-  // Auto-set workDir if not configured
   const settings = loadSettings();
   if (!settings.runner?.workDir) {
     settings.runner = settings.runner || {};
@@ -146,8 +178,6 @@ export function runSetup(withOverride = false, planKey = null) {
     created.push(`📋 Plan set → ${CLAUDE_PLANS[planKey].label}`);
   }
 
-  // Write or update CLAUDE.md with workDir injected
-  const workDir = resolve(getSetting("runner", "workDir") || PROJECT_DIR);
   const claudeMdExisted = existsSync(CLAUDE_MD);
   updateClaudeMdWorkDir(workDir);
   if (!claudeMdExisted) {

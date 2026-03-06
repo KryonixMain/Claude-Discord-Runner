@@ -34,7 +34,6 @@ export async function handleExportLogs(interaction) {
     return;
   }
 
-  // Concatenate all logs (limited to 8MB for Discord upload)
   let combined = "";
   for (const f of logFiles.sort()) {
     const content = readFileSync(join(LOG_DIR, f), "utf8");

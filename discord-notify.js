@@ -149,10 +149,9 @@ async function sendWebhook(payload, { category = "default" } = {}) {
       if (res.ok) return true;
 
       if (res.status === 429) {
-        const retryAfter = Number(res.headers.get("retry-after") || "5") * 1000;
-        console.warn(`[Notify] Rate limited — retrying in ${retryAfter}ms`);
-        await new Promise((r) => setTimeout(r, retryAfter));
-        continue;
+        const retryAfter = Number(res.headers.get("retry-after") || "5");
+        console.warn(`[Notify] Rate limited (retry-after: ${retryAfter}s) — skipping message to avoid stall`);
+        return false;
       }
 
       if (attempt < MAX_RETRIES) {

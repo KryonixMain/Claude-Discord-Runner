@@ -1,5 +1,7 @@
 import { Client, EmbedBuilder, GatewayIntentBits, PermissionsBitField, REST, Routes, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType } from "discord.js";
 import { spawn } from "child_process";
+import { readFileSync } from "fs";
+import { join } from "path";
 import { commands } from "./commands.js";
 import { getSetting } from "./lib/settings.js";
 import { CLAUDE_PLANS } from "./lib/plans.js";
@@ -27,8 +29,9 @@ import { handleSettings }         from "./handlers/settings.js";
 import { handleArchive }          from "./handlers/archive.js";
 import { handleValidateSessions } from "./handlers/validate-sessions.js";
 import { handleHelp }             from "./handlers/help.js";
-// New handlers
 import { handleSetTimeout }       from "./handlers/set-timeout.js";
+import { handleGetTimeout }       from "./handlers/get-timeout.js";
+import { handleSetPause }             from "./handlers/set-pause.js";
 import { handlePause, handleResume } from "./handlers/pause.js";
 import { handleRetry }            from "./handlers/retry.js";
 import { handleDryRun }           from "./handlers/dry-run.js";
@@ -42,7 +45,6 @@ import { handleWatch }           from "./handlers/watch.js";
 import { handleDependencyGraph } from "./handlers/dependency-graph.js";
 import { handleSetupWizard }     from "./handlers/setup-wizard.js";
 import { handleInfo }            from "./handlers/info.js";
-// Phase 2 handlers
 import { handleCreateSession }   from "./handlers/create-session.js";
 import { handleEstimate }        from "./handlers/estimate.js";
 import { handleHealth }          from "./handlers/health.js";
@@ -50,6 +52,7 @@ import { handleGenerateTemplate } from "./handlers/generate-template.js";
 import { handleRollback }        from "./handlers/rollback.js";
 import { handleCompareSessions } from "./handlers/compare-sessions.js";
 import { handleRetryPrompt }    from "./handlers/retry-prompt.js";
+import { handleSetSecurity }   from "./handlers/set-security.js";
 
 const BOT_TOKEN  = process.env.DISCORD_BOT_TOKEN  || getSetting("bot", "token");
 const CLIENT_ID  = process.env.DISCORD_CLIENT_ID  || getSetting("bot", "clientId");
@@ -70,9 +73,7 @@ async function registerCommands(guildId) {
   const rest = new REST({ version: "10" }).setToken(BOT_TOKEN);
   try {
     if (guildId) {
-      // Register guild commands (instant sync)
       await rest.put(Routes.applicationGuildCommands(CLIENT_ID, guildId), { body: commands });
-      // Clear stale global commands so they don't appear twice
       await rest.put(Routes.applicationCommands(CLIENT_ID), { body: [] }).catch(() => {});
       console.log(`[Bot] Slash commands registered (guild: ${guildId})`);
     } else {
@@ -87,7 +88,6 @@ async function registerCommands(guildId) {
 client.once("ready", async () => {
   console.log(`[Bot] Logged in as ${client.user.tag}`);
 
-  // Resolve guild ID: explicit setting > derived from channel
   const channel = await client.channels.fetch(CHANNEL_ID).catch(() => null);
   const guildId = getSetting("bot", "guildId") || channel?.guild?.id || null;
 
@@ -98,7 +98,6 @@ client.once("ready", async () => {
     return;
   }
 
-  // Channel permission check
   const me = channel.guild?.members?.me;
   if (me) {
     const perms = channel.permissionsFor(me);
@@ -120,7 +119,6 @@ client.once("ready", async () => {
     }
   }
 
-  // Config validation
   const configResult = validateConfig(loadSettings());
   if (!configResult.valid) {
     console.warn("[Bot] Config validation errors:", configResult.errors.join("; "));
@@ -129,7 +127,6 @@ client.once("ready", async () => {
     console.warn("[Bot] Config warnings:", configResult.warnings.join("; "));
   }
 
-  // Webhook health check
   const health = await checkWebhookHealth();
   if (!health.healthy) {
     console.warn(`[Bot] Webhook health check failed: ${health.reason}`);
@@ -137,7 +134,6 @@ client.once("ready", async () => {
     console.log("[Bot] Webhook health check passed");
   }
 
-  // Check if startup message was already sent recently (avoid duplicate on restart)
   const STARTUP_TITLE = "Claude Runner Bot — Online";
   let alreadySent = false;
   try {
@@ -229,7 +225,6 @@ client.once("ready", async () => {
 
       const updateMsg = await channel.send({ embeds: [updateEmbed], components: [updateRow] });
 
-      // Listen for button clicks (5 minutes)
       try {
         const btnInteraction = await updateMsg.awaitMessageComponent({
           componentType: ComponentType.Button,
@@ -259,7 +254,6 @@ client.once("ready", async () => {
             components: [],
           });
 
-          // Spawn update.bat detached, then exit this process
           const updateProc = spawn("cmd.exe", ["/c", "update.bat"], {
             cwd: PROJECT_DIR,
             detached: true,
@@ -267,11 +261,9 @@ client.once("ready", async () => {
           });
           updateProc.unref();
 
-          // Give the message time to send, then exit
           setTimeout(() => process.exit(0), 2000);
         }
       } catch {
-        // Timeout — remove buttons
         const disabledRow = new ActionRowBuilder().addComponents(
           new ButtonBuilder().setCustomId("update_ignore").setLabel("Ignore").setStyle(ButtonStyle.Secondary).setDisabled(true),
           new ButtonBuilder().setCustomId("update_now").setLabel("Update").setStyle(ButtonStyle.Success).setDisabled(true),
@@ -280,6 +272,13 @@ client.once("ready", async () => {
       }
     } else {
       console.log(`[Bot] Up to date (v${update.localVersion})`);
+      // Show dev version (includes index) from package.json
+      try {
+        const pkg = JSON.parse(readFileSync(join(PROJECT_DIR, "package.json"), "utf8"));
+        if (pkg.version && pkg.version !== update.localVersion) {
+          console.log(`[Bot] Dev version: v${pkg.version}`);
+        }
+      } catch { /* ignore */ }
     }
   } catch (err) {
     console.warn("[Bot] Update check failed:", err.message);
@@ -303,8 +302,9 @@ const HANDLERS = {
   archive:                  handleArchive,
   "validate-sessions":      handleValidateSessions,
   help:                     handleHelp,
-  // New commands
+  "get-timeout":            handleGetTimeout,
   "set-timeout":            handleSetTimeout,
+  "set-pause":              handleSetPause,
   pause:                    handlePause,
   resume:                   handleResume,
   retry:                    handleRetry,
@@ -320,7 +320,6 @@ const HANDLERS = {
   "dependency-graph":       handleDependencyGraph,
   "setup-wizard":           handleSetupWizard,
   info:                     handleInfo,
-  // Phase 2
   "create-session":         handleCreateSession,
   estimate:                 handleEstimate,
   health:                   handleHealth,
@@ -328,6 +327,7 @@ const HANDLERS = {
   rollback:                 handleRollback,
   "compare-sessions":       handleCompareSessions,
   "retry-prompt":           handleRetryPrompt,
+  "set-security":           handleSetSecurity,
 };
 
 client.on("interactionCreate", async (interaction) => {
@@ -341,8 +341,6 @@ client.on("interactionCreate", async (interaction) => {
 
   const handler = HANDLERS[interaction.commandName];
   if (!handler) return;
-
-  // Audit log
   const cmdArgs = {};
   try {
     for (const opt of interaction.options?.data ?? []) {

@@ -52,8 +52,57 @@ export function detectSessions() {
     const fullPath = join(SESSION_DIR, file);
     const content  = readFileSync(fullPath, "utf8");
     const prompts  = parseSessionFile(content);
-    return { file, fullPath, totalChars: content.length, promptCount: prompts.length, prompts };
+    const override = parseOverrideBlocks(content);
+    const name     = file.replace(".md", "");
+    const dependsOn = override?.session?.dependsOn ?? [];
+    return { file, fullPath, name, totalChars: content.length, promptCount: prompts.length, prompts, dependsOn, override };
   });
 
   return { sessions };
+}
+
+/** Parse ALL SESSION OVERRIDE CONFIG blocks from content and merge them */
+function parseOverrideBlocks(content) {
+  const allMatches = [...content.matchAll(/<!--\r?\nSESSION OVERRIDE CONFIG\r?\n([\s\S]*?)-->/g)];
+  if (allMatches.length === 0) return {};
+  let merged = {};
+  for (const m of allMatches) {
+    try {
+      const parsed = JSON.parse(m[1]);
+      merged.session = { ...merged.session, ...parsed.session };
+      merged.prompts = merged.prompts || {};
+      if (parsed.prompts) {
+        for (const [k, v] of Object.entries(parsed.prompts)) {
+          merged.prompts[k] = { ...merged.prompts[k], ...v };
+        }
+      }
+    } catch { /* ignore */ }
+  }
+  return merged;
+}
+
+/** Build wave assignments from sessions with dependsOn arrays */
+export function buildWaves(sessions) {
+  const waves = [];
+  const assigned = new Set();
+  const sessionNames = new Set(sessions.map((s) => s.name));
+
+  while (assigned.size < sessions.length) {
+    const wave = [];
+    for (const s of sessions) {
+      if (assigned.has(s.name)) continue;
+      const deps = (s.dependsOn ?? []).filter((d) => sessionNames.has(d));
+      const unmet = deps.filter((d) => !assigned.has(d));
+      if (unmet.length === 0) wave.push(s);
+    }
+    if (wave.length === 0) {
+      // Deadlock — remaining sessions have circular/unresolvable deps
+      const remaining = sessions.filter((s) => !assigned.has(s.name));
+      waves.push(remaining);
+      break;
+    }
+    waves.push(wave);
+    for (const s of wave) assigned.add(s.name);
+  }
+  return waves;
 }

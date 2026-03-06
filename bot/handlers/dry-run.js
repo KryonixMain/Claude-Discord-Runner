@@ -8,7 +8,6 @@ import { CLAUDE_PLANS, CHARS_PER_TOKEN } from "../lib/plans.js";
 export async function handleDryRun(interaction) {
   await interaction.deferReply();
 
-  // Step 1: Validate
   const validation = validateAllSessions();
   if (!validation.allValid) {
     const failedLines = validation.results
@@ -28,7 +27,6 @@ export async function handleDryRun(interaction) {
     return;
   }
 
-  // Step 2: Detect sessions
   const detected = detectSessions();
   if (detected.error || !detected.sessions?.length) {
     await interaction.editReply({
@@ -43,12 +41,10 @@ export async function handleDryRun(interaction) {
     return;
   }
 
-  // Step 3: Calculate tokens
   const planKey = getSetting("runner", "claudePlan");
   const plan    = CLAUDE_PLANS[planKey] ?? CLAUDE_PLANS.max20;
   const calc    = calculateSessionTimeouts(detected.sessions, planKey);
 
-  // Step 4: Build session summary
   const sessionLines = detected.sessions.map((s, i) => {
     const c = calc.sessions?.[i];
     const estChars  = s.prompts.reduce((sum, p) => sum + (p.text?.length ?? 0), 0);

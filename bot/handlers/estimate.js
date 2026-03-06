@@ -1,7 +1,7 @@
 import { EmbedBuilder } from "discord.js";
 import { detectSessions } from "../lib/session-parser.js";
 import { calculateSessionTimeouts } from "../lib/calculator.js";
-import { CLAUDE_PLANS, CHARS_PER_TOKEN } from "../lib/plans.js";
+import { CLAUDE_PLANS } from "../lib/plans.js";
 import { getSetting } from "../lib/settings.js";
 import { formatDuration, loadState } from "../lib/helpers.js";
 
@@ -25,7 +25,6 @@ export async function handleEstimate(interaction) {
   const state    = loadState();
   const pauseMin = getSetting("runner", "pauseMinutes");
 
-  // Per-session breakdown
   const sessionLines = calc.sessions.map((s, i) => {
     const completed = state.completedSessions?.includes(s.file?.replace(".md", ""));
     const status = completed ? "Done" : "Pending";
@@ -40,14 +39,12 @@ export async function handleEstimate(interaction) {
     ].join("\n");
   });
 
-  // Total estimates
   const totalInputTokens = calc.sessions.reduce((s, x) => s + x.inputTokens, 0);
   const totalEstMs = calc.sessions.reduce((s, x) => s + x.estimatedMs, 0);
   const totalPauseMs = (detected.sessions.length - 1) * pauseMin * 60_000;
   const totalWallMs = totalEstMs + totalPauseMs;
   const budgetPct = Math.round((calc.totalOutputTokens / calc.budgetTokens) * 100);
 
-  // Warnings
   const warnings = [];
   if (!calc.fitsInOneWindow) {
     warnings.push(`Estimated output exceeds single 5h window — **${calc.windowsNeeded} windows** needed`);

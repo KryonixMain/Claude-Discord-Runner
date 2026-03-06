@@ -25,28 +25,27 @@ export async function handleOverride(interaction) {
 
   let content = readFileSync(filePath, "utf8");
 
-  const overrideMatch = content.match(/<!--\nSESSION OVERRIDE CONFIG\n([\s\S]*?)\n-->/);
-  let config;
-
-  if (overrideMatch) {
+  let config = { session: {}, prompts: {} };
+  const allMatches = [...content.matchAll(/<!--\r?\nSESSION OVERRIDE CONFIG\r?\n([\s\S]*?)-->/g)];
+  for (const m of allMatches) {
     try {
-      config = JSON.parse(overrideMatch[1]);
-    } catch {
-      config = { session: {}, prompts: {} };
-    }
-  } else {
-    config = { session: {}, prompts: {} };
+      const parsed = JSON.parse(m[1]);
+      config.session = { ...config.session, ...parsed.session };
+      if (parsed.prompts) {
+        for (const [k, v] of Object.entries(parsed.prompts)) {
+          config.prompts[k] = { ...config.prompts[k], ...v };
+        }
+      }
+    } catch { /* ignore */ }
   }
 
   config.session.defaultModel = model;
 
   const overrideBlock = `<!--\nSESSION OVERRIDE CONFIG\n${JSON.stringify(config, null, 2)}\n-->`;
 
-  if (overrideMatch) {
-    content = content.replace(/<!--\nSESSION OVERRIDE CONFIG\n[\s\S]*?\n-->/, overrideBlock);
-  } else {
-    content = overrideBlock + "\n\n" + content;
-  }
+  // Remove ALL existing override blocks, then prepend the merged one
+  content = content.replace(/<!--\r?\nSESSION OVERRIDE CONFIG\r?\n[\s\S]*?\r?\n-->\r?\n?\r?\n?/g, "");
+  content = overrideBlock + "\n\n" + content;
 
   writeFileSync(filePath, content);
 

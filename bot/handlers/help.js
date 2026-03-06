@@ -37,13 +37,16 @@ const COMMAND_GROUPS = [
     commands: [
       ["/security-status",                "List all findings across all security reports"],
       ["/start-resolve-security",         "Manually trigger the Claude security fix pass"],
+      ["/set-security `session:N` `enabled`", "Toggle auto security fix per session"],
     ],
   },
   {
     name: "Sessions & Settings",
     commands: [
       ["/new-session `number` `[override]`", "Create a new Session N.md from template"],
-      ["/set-timeout session:N minutes:M", "Set a per-session timeout override"],
+      ["/get-timeout `[session:N]`",        "Show timeout quota and pause config (all or specific session)"],
+      ["/set-timeout session:N minutes:M `[prompt:P]`", "Set timeout per session or per prompt"],
+      ["/set-pause minutes:M `[session:N]`", "Set pause between sessions (per-session or global)"],
       ["/override session:N model:X",      "Set a per-session model override"],
       ["/diff session:N",                  "Compare session output between last two archives"],
       ["/dependency-graph",                "Visualize session dependency relationships"],

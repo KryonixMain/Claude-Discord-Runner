@@ -6,7 +6,6 @@ export async function handleRollback(interaction) {
   const sessionNum = interaction.options.getInteger("session");
   const workDir = getWorkDir();
 
-  // Check if workDir is a git repo
   const gitCheck = spawnSync("git", ["rev-parse", "--is-inside-work-tree"], {
     encoding: "utf8", cwd: workDir, timeout: 5_000,
   });
@@ -25,8 +24,6 @@ export async function handleRollback(interaction) {
 
   await interaction.deferReply();
 
-  // Find commits related to this session
-  // Look for recent commits and identify files changed
   const logResult = spawnSync("git", [
     "log", "--oneline", "--since=24 hours ago", "--all", "-50",
   ], { encoding: "utf8", cwd: workDir, timeout: 10_000 });
@@ -42,7 +39,6 @@ export async function handleRollback(interaction) {
     });
   }
 
-  // Get files changed by Claude in the working tree (uncommitted changes + recent commits)
   const diffResult = spawnSync("git", ["diff", "--stat", "HEAD~5", "HEAD"], {
     encoding: "utf8", cwd: workDir, timeout: 10_000,
   });
@@ -72,11 +68,8 @@ export async function handleRollback(interaction) {
     });
   }
 
-  // Show preview of what would be reverted
   const recentCommits = logResult.stdout.trim().split("\n").slice(0, 10).join("\n");
 
-  // Actually perform the rollback: revert uncommitted changes for now
-  // For safety, we only revert uncommitted changes (staged + unstaged)
   const stashResult = spawnSync("git", ["stash", "push", "-m", `rollback-session-${sessionNum}-${Date.now()}`], {
     encoding: "utf8", cwd: workDir, timeout: 10_000,
   });

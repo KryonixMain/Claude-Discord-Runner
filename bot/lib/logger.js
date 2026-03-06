@@ -47,14 +47,12 @@ function logMessage(level, source, message) {
 
   const line = formatLogLine(level, source, message);
 
-  // Write to stdout/stderr
   if (level === "ERROR" || level === "WARN") {
     process.stderr.write(line + "\n");
   } else {
     process.stdout.write(line + "\n");
   }
 
-  // Write to log file
   writeToFile(line);
 }
 
@@ -67,8 +65,6 @@ export function createLogger(source) {
   };
 }
 
-// Default logger for general use
 export const logger = createLogger("Bot");
 
-// Rotate on import
 rotateLogFiles();

@@ -36,7 +36,7 @@ export const DEFAULT_SETTINGS = {
     webhookUrls: { default: "", security: "", progress: "" },
   },
   runner: {
-    defaultModel: "claude-opus-4-5",
+    defaultModel: "claude-opus-4-6",
     maxTurns: 200,
     pauseMinutes: 360,
     autoSecurityFix: true,
@@ -45,12 +45,13 @@ export const DEFAULT_SETTINGS = {
     skipPermissions: true,
     parallel: false,
     workDir: "",
+    saveGeneratedPrompts: false,
     verification: null,
     // Example verification config:
     // verification: {
     //   commands: [
     //     { label: "Lint", command: "npm", args: ["run", "lint"], timeoutMs: 60000 },
-    //     { label: "Tests", command: "npm", args: ["test"], timeoutMs: 120000 },
+    //     { label: "Tests", command: "npm", args: ["test"], timeoutMs: 4200000 },
     //     { label: "Build", command: "npm", args: ["run", "build"], timeoutMs: 180000 },
     //   ],
     //   autoStopAfter: 3,  // Stop after N consecutive verification failures (0 = never)

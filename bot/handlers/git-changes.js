@@ -1,16 +1,16 @@
-import { EmbedBuilder } from "discord.js";
 import { existsSync } from "fs";
 import { execSync } from "child_process";
 import { join } from "path";
-import { PROJECT_DIR } from "../lib/paths.js";
+import { getWorkDir } from "../lib/helpers.js";
 
 export async function handleGitChanges(interaction) {
   await interaction.deferReply();
 
-  const gitDir = join(PROJECT_DIR, ".git");
+  const workDir = getWorkDir();
+  const gitDir = join(workDir, ".git");
   if (!existsSync(gitDir)) {
     await interaction.editReply({
-      content: "No `.git` directory found — a git repository is required for this command.",
+      content: `No \`.git\` directory found in \`${workDir}\` — a git repository is required for this command.`,
       ephemeral: true,
     });
     return;
@@ -19,10 +19,9 @@ export async function handleGitChanges(interaction) {
   const file = interaction.options.getString("file") ?? null;
 
   if (!file) {
-    // List all changed files
     let output;
     try {
-      output = execSync("git diff --name-only", { cwd: PROJECT_DIR, encoding: "utf8", timeout: 10_000 });
+      output = execSync("git diff --name-only", { cwd: workDir, encoding: "utf8", timeout: 10_000 });
     } catch {
       output = "";
     }
@@ -38,10 +37,9 @@ export async function handleGitChanges(interaction) {
     return;
   }
 
-  // Show diff for specific file
   let diff;
   try {
-    diff = execSync(`git diff HEAD -- "${file}"`, { cwd: PROJECT_DIR, encoding: "utf8", timeout: 10_000 });
+    diff = execSync(`git diff HEAD -- "${file}"`, { cwd: workDir, encoding: "utf8", timeout: 10_000 });
   } catch {
     diff = "";
   }
@@ -51,13 +49,11 @@ export async function handleGitChanges(interaction) {
     return;
   }
 
-  // Check if binary
   if (diff.includes("Binary files")) {
     await interaction.editReply(`\`${file}\` is a binary file — cannot display diff.`);
     return;
   }
 
-  // Split into chunks if > 1900 chars
   const MAX = 1900;
   const chunks = [];
   let remaining = diff;
@@ -67,7 +63,6 @@ export async function handleGitChanges(interaction) {
       chunks.push(remaining);
       break;
     }
-    // Try to split at a newline
     let splitIdx = remaining.lastIndexOf("\n", MAX);
     if (splitIdx <= 0) splitIdx = MAX;
     chunks.push(remaining.slice(0, splitIdx));

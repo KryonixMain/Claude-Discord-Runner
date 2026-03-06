@@ -13,7 +13,7 @@
     }
   },
   "runner": {
-    "defaultModel": "claude-opus-4-5",
+    "defaultModel": "claude-opus-4-6",
     "maxTurns": 200,
     "pauseMinutes": 360,
     "autoSecurityFix": true,

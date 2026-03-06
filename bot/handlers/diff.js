@@ -22,7 +22,6 @@ export async function handleDiff(interaction) {
     return;
   }
 
-  // Find the two most recent archives that contain this session's output
   const archives = readdirSync(ARCHIVE_DIR)
     .filter((f) => f.startsWith("run-"))
     .sort()
@@ -72,7 +71,6 @@ export async function handleDiff(interaction) {
     return;
   }
 
-  // Simple line-based diff
   const prevLines = prev.split("\n");
   const currLines = curr.split("\n");
   const added   = currLines.filter((l) => !prevLines.includes(l));

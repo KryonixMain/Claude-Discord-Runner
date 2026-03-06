@@ -3,13 +3,25 @@ import { existsSync, readFileSync, readdirSync } from "fs";
 import { join } from "path";
 import { SESSION_DIR } from "../lib/paths.js";
 import { loadState } from "../lib/helpers.js";
+import { buildWaves } from "../lib/session-parser.js";
 
 function parseOverride(content) {
-  const match = content.match(/<!--\nSESSION OVERRIDE CONFIG\n([\s\S]*?)-->/);
-  if (match) {
-    try { return JSON.parse(match[1]); } catch { /* ignore */ }
+  const allMatches = [...content.matchAll(/<!--\r?\nSESSION OVERRIDE CONFIG\r?\n([\s\S]*?)-->/g)];
+  if (allMatches.length === 0) return {};
+  let merged = {};
+  for (const m of allMatches) {
+    try {
+      const parsed = JSON.parse(m[1]);
+      merged.session = { ...merged.session, ...parsed.session };
+      merged.prompts = merged.prompts || {};
+      if (parsed.prompts) {
+        for (const [k, v] of Object.entries(parsed.prompts)) {
+          merged.prompts[k] = { ...merged.prompts[k], ...v };
+        }
+      }
+    } catch { /* ignore */ }
   }
-  return {};
+  return merged;
 }
 
 export async function handleDependencyGraph(interaction) {
@@ -48,7 +60,6 @@ export async function handleDependencyGraph(interaction) {
   const state = loadState();
   const completed = new Set(state.completedSessions ?? []);
 
-  // Parse sessions and their dependencies
   const sessions = files.map((file) => {
     const content = readFileSync(join(SESSION_DIR, file), "utf8");
     const override = parseOverride(content);
@@ -61,16 +72,13 @@ export async function handleDependencyGraph(interaction) {
     };
   });
 
-  // Build the graph visualization
   const lines = [];
   const sessionNames = new Set(sessions.map((s) => s.name));
 
-  // Find roots (no dependencies) and dependents
   const roots = sessions.filter((s) => s.dependsOn.length === 0);
   const withDeps = sessions.filter((s) => s.dependsOn.length > 0);
 
-  // Build adjacency for display
-  const dependents = new Map(); // parent -> [children]
+  const dependents = new Map();
   for (const s of sessions) {
     for (const dep of s.dependsOn) {
       if (!dependents.has(dep)) dependents.set(dep, []);
@@ -78,21 +86,17 @@ export async function handleDependencyGraph(interaction) {
     }
   }
 
-  // Status indicator
   const icon = (s) => s.completed ? "[done]" : "[    ]";
 
-  // Render tree
   lines.push("```");
 
   if (withDeps.length === 0) {
-    // No dependencies — all sessions are independent
     lines.push("All sessions are independent (no dependencies):");
     lines.push("");
     for (const s of sessions) {
       lines.push(`  ${icon(s)} ${s.name}`);
     }
   } else {
-    // Show dependency tree
     lines.push("Session Dependency Graph:");
     lines.push("");
 
@@ -116,13 +120,11 @@ export async function handleDependencyGraph(interaction) {
       });
     }
 
-    // Start from roots
     for (const root of roots) {
       renderNode(root.name, 0, false, "");
       lines.push("");
     }
 
-    // Show any sessions with unresolvable deps (pointing to non-existent sessions)
     const orphans = withDeps.filter((s) =>
       s.dependsOn.some((d) => !sessionNames.has(d))
     );
@@ -137,7 +139,14 @@ export async function handleDependencyGraph(interaction) {
 
   lines.push("```");
 
-  // Summary
+  // Build wave assignments
+  const waveSessions = sessions.map((s) => ({ name: s.name, dependsOn: s.dependsOn }));
+  const waves = buildWaves(waveSessions);
+  const waveLines = [];
+  waves.forEach((wave, i) => {
+    waveLines.push(`**Wave ${i + 1}:** ${wave.map((s) => s.name).join(", ")}`);
+  });
+
   const completedCount = sessions.filter((s) => s.completed).length;
   const independentCount = roots.length;
   const dependentCount = withDeps.length;
@@ -152,6 +161,7 @@ export async function handleDependencyGraph(interaction) {
           { name: "Completed", value: `${completedCount}/${sessions.length}`, inline: true },
           { name: "Independent", value: String(independentCount), inline: true },
           { name: "With dependencies", value: String(dependentCount), inline: true },
+          { name: "Execution Waves", value: waveLines.join("\n") || "All in Wave 1", inline: false },
         )
         .setColor(0x5865f2)
         .setTimestamp(),

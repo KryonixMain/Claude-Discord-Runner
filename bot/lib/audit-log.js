@@ -5,10 +5,6 @@ import { ensureDir } from "./helpers.js";
 
 const AUDIT_FILE = join(LOG_DIR, "audit.jsonl");
 
-/**
- * Append an audit entry to the audit log.
- * Each entry is a single JSON line (JSONL format).
- */
 export function auditLog({ command, actor, args, outcome, linkedRun, linkedSession }) {
   ensureDir(LOG_DIR);
 
@@ -29,9 +25,6 @@ export function auditLog({ command, actor, args, outcome, linkedRun, linkedSessi
   return entry;
 }
 
-/**
- * Read the last N entries from the audit log.
- */
 export function readAuditLog(limit = 50) {
   if (!existsSync(AUDIT_FILE)) return [];
 
@@ -49,9 +42,6 @@ export function readAuditLog(limit = 50) {
   }
 }
 
-/**
- * Get audit entries for a specific command.
- */
 export function getAuditEntriesForCommand(command, limit = 20) {
   return readAuditLog(200).filter((e) => e.command === command).slice(-limit);
 }

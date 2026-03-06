@@ -38,7 +38,6 @@ export async function handleRetry(interaction) {
     return;
   }
 
-  // Remove from completed so it will run again
   state.completedSessions.splice(idx, 1);
   delete state[`${sessionKey}_completedAt`];
   delete state[`${sessionKey}_durationMs`];

@@ -59,7 +59,6 @@ export async function handleSettings(interaction) {
     const key   = interaction.options.getString("key");
     const value = interaction.options.getString("value");
 
-    // Validate key against DEFAULT_SETTINGS structure
     const parts    = key.split(".");
     let defaultObj = DEFAULT_SETTINGS;
     for (const p of parts) {
@@ -100,7 +99,6 @@ export async function handleSettings(interaction) {
     obj[lastKey] = parsed;
     saveSettings(s);
 
-    // When workDir changes, update CLAUDE.md so Claude targets the correct directory
     if (key === "runner.workDir") {
       updateClaudeMdWorkDir(parsed);
     }

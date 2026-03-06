@@ -30,14 +30,7 @@ import {
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PROJECT_DIR = __dirname;                                   // project root (run-sessions.js lives here)
 const SETTINGS_FILE = join(PROJECT_DIR, "bot", "settings.json"); // bot config stays in bot/
-
-// Runtime data directories — at project root (consistent with bot/lib/paths.js)
-const SESSION_DIR  = join(PROJECT_DIR, "Sessions");
-const LOG_DIR      = join(PROJECT_DIR, "Logs");
-const SECURITY_DIR = join(PROJECT_DIR, "Security");
-const ARCHIVE_DIR  = join(PROJECT_DIR, "Archive");
-const STATE_FILE   = join(PROJECT_DIR, ".progress.json");
-const CLAUDE_MD    = join(PROJECT_DIR, "CLAUDE.md");
+const CLAUDE_MD    = join(PROJECT_DIR, "CLAUDE.md");             // CLAUDE.md stays in bot project
 
 // Work directory: env var (set by bot process.js) > settings > fallback to PROJECT_DIR
 function resolveWorkDir() {
@@ -52,6 +45,13 @@ function resolveWorkDir() {
 }
 const WORK_DIR = resolveWorkDir();
 
+// Runtime data directories — inside workDir (shared _workspace hub)
+const SESSION_DIR  = join(WORK_DIR, "Sessions");
+const LOG_DIR      = join(WORK_DIR, "Logs");
+const SECURITY_DIR = join(WORK_DIR, "Security");
+const ARCHIVE_DIR  = join(WORK_DIR, "Archive");
+const STATE_FILE   = join(WORK_DIR, ".progress.json");
+
 // ########################################################################### CLI Args ###########################################################################
 
 const args = process.argv.slice(2);
@@ -65,7 +65,7 @@ const SESSION_FILTER = sessionArgIdx !== -1 ? parseInt(args[sessionArgIdx + 1], 
 
 const DEFAULT_SETTINGS = {
   runner: {
-    defaultModel: "claude-opus-4-5",
+    defaultModel: "claude-opus-4-6",
     maxTurns: 200,
     pauseMinutes: 360,
     claudePlan: "max20",
@@ -125,7 +125,7 @@ const CLAUDE_PLANS = {
 
 // ########################################################################### Model Constants ###########################################################################
 
-const OPUS = "claude-opus-4-5";
+const OPUS = "claude-opus-4-6";
 const SONNET = "claude-sonnet-4-5";
 
 // ########################################################################### Prompt Config Defaults ###########################################################################
@@ -274,15 +274,28 @@ function resolveClaudePath() {
 // ########################################################################### Session Override Config Parser ###########################################################################
 
 function parseSessionOverride(content) {
-  const commentMatch = content.match(
-    /<!--\nSESSION OVERRIDE CONFIG\n([\s\S]*?)-->/,
-  );
-  if (commentMatch) {
-    try {
-      return JSON.parse(commentMatch[1]);
-    } catch {
-      log("Failed to parse HTML-comment override block — falling back", "WARN");
+  // Find ALL override blocks and merge them (last block wins for conflicts,
+  // but dependsOn/waitForFile are preserved from any block that has them)
+  const allMatches = [...content.matchAll(/<!--\r?\nSESSION OVERRIDE CONFIG\r?\n([\s\S]*?)-->/g)];
+  if (allMatches.length > 0) {
+    if (allMatches.length > 1) log(`[WARN] ${allMatches.length} override blocks found — merging`);
+    let merged = {};
+    for (const m of allMatches) {
+      try {
+        const parsed = JSON.parse(m[1]);
+        // Deep merge: session and prompts
+        merged.session = { ...merged.session, ...parsed.session };
+        merged.prompts = merged.prompts || {};
+        if (parsed.prompts) {
+          for (const [k, v] of Object.entries(parsed.prompts)) {
+            merged.prompts[k] = { ...merged.prompts[k], ...v };
+          }
+        }
+      } catch {
+        log("Failed to parse an override block — skipping", "WARN");
+      }
     }
+    return merged;
   }
 
   const fenceMatch = content.match(/^```json\s*\n([\s\S]*?)\n```/);
@@ -299,9 +312,72 @@ function parseSessionOverride(content) {
 
 // ########################################################################### Prompt Parser ###########################################################################
 
+// ########################################################################### waitForFile — Prompt-Level File Polling ###########################################################################
+
+async function waitForFiles(session) {
+  const filesToWait = [];
+
+  // Collect from session-level waitForFile
+  const override = parseSessionOverride(readFileSync(session.file, "utf8"));
+  if (override?.session?.waitForFile) {
+    filesToWait.push({
+      source: `${session.name} (session)`,
+      ...override.session.waitForFile,
+    });
+  }
+
+  // Collect from prompt-level waitForFile
+  for (const [promptNum, cfg] of Object.entries(override?.prompts ?? {})) {
+    if (cfg?.waitForFile) {
+      filesToWait.push({
+        source: `${session.name} Prompt ${promptNum}`,
+        ...cfg.waitForFile,
+      });
+    }
+  }
+
+  if (filesToWait.length === 0) return true;
+
+  log(`${session.name}: Waiting for ${filesToWait.length} file(s) before execution...`);
+
+  for (const fw of filesToWait) {
+    const filePath = fw.path.startsWith("/") || fw.path.match(/^[A-Za-z]:/)
+      ? fw.path
+      : join(WORK_DIR, fw.path);
+    const timeoutMs = fw.timeoutMs ?? 900_000;       // default 15 min
+    const pollIntervalMs = fw.pollIntervalMs ?? 30_000; // default 30s
+    const maxAttempts = Math.ceil(timeoutMs / pollIntervalMs);
+
+    log(`  Polling for: ${filePath} (timeout: ${formatDuration(timeoutMs)}, interval: ${formatDuration(pollIntervalMs)})`);
+
+    let found = false;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      if (existsSync(filePath)) {
+        log(`  File found: ${filePath} (attempt ${attempt}/${maxAttempts})`);
+        found = true;
+        break;
+      }
+      if (attempt < maxAttempts) {
+        process.stdout.write(`\r  [${fw.source}] Waiting for file... attempt ${attempt}/${maxAttempts}    `);
+        await new Promise((r) => setTimeout(r, pollIntervalMs));
+      }
+    }
+    process.stdout.write("\n");
+
+    if (!found) {
+      log(`  File NOT found after ${formatDuration(timeoutMs)}: ${filePath}`, "WARN");
+      log(`  Continuing anyway — Claude will work without this file.`, "WARN");
+    }
+  }
+
+  return true;
+}
+
+// ########################################################################### Prompt Parser ###########################################################################
+
 function parsePrompts(content, sessionName, override) {
   const stripped = content
-    .replace(/<!--\nSESSION OVERRIDE CONFIG[\s\S]*?-->\n?\n?/, "")
+    .replace(/<!--\r?\nSESSION OVERRIDE CONFIG[\s\S]*?-->\r?\n?\r?\n?/g, "")
     .replace(/^```json\s*\n[\s\S]*?\n```\s*\n?/, "");
 
   const matches = [...stripped.matchAll(/^##\s+Prompt\s+(\d+)\s*[—–:\-]/gim)];
@@ -342,6 +418,10 @@ function parsePrompts(content, sessionName, override) {
       ? { model: override.session.defaultModel }
       : {};
 
+    const sessionTimeoutOverride = override?.session?.timeoutMs
+      ? { timeoutMs: override.session.timeoutMs }
+      : {};
+
     const promptOverride = override?.prompts?.[String(promptNumber)] ?? {};
 
     return {
@@ -351,6 +431,7 @@ function parsePrompts(content, sessionName, override) {
       text,
       ...baseConfig,
       ...sessionModelOverride,
+      ...sessionTimeoutOverride,
       ...promptOverride,
     };
   });
@@ -389,12 +470,19 @@ function loadSessions() {
     const override = parseSessionOverride(content);
     const prompts = parsePrompts(content, name, override);
 
+    const deps = override?.session?.dependsOn ?? [];
+    if (deps.length > 0) {
+      log(`   ${name}: dependsOn=${JSON.stringify(deps)}`);
+    } else {
+      log(`   ${name}: no dependencies (Wave 1 candidate)`);
+    }
+
     return {
       name,
       file: filePath,
       prompts,
       pauseAfterMs: override?.session?.pauseAfterMs ?? null,
-      dependsOn: override?.session?.dependsOn ?? [],
+      dependsOn: deps,
     };
   });
 }
@@ -495,6 +583,33 @@ function runStartupCheck() {
     });
   }
 
+  // Wave assignments
+  const remaining = new Set(sessions.map((s) => s.name));
+  const sessionMap = new Map(sessions.map((s) => [s.name, s]));
+  const waveAssignments = [];
+  const waveAssigned = new Set();
+  while (waveAssigned.size < sessions.length) {
+    const wave = [];
+    for (const s of sessions) {
+      if (waveAssigned.has(s.name)) continue;
+      const deps = (s.dependsOn ?? []).filter((d) => remaining.has(d));
+      const unmet = deps.filter((d) => !waveAssigned.has(d));
+      if (unmet.length === 0) wave.push(s);
+    }
+    if (wave.length === 0) break;
+    waveAssignments.push(wave);
+    for (const s of wave) waveAssigned.add(s.name);
+  }
+
+  log("--- Execution Waves ------------------------------------------------");
+  waveAssignments.forEach((wave, i) => {
+    const names = wave.map((s) => {
+      const deps = s.dependsOn ?? [];
+      return deps.length > 0 ? `${s.name} (after: ${deps.join(", ")})` : s.name;
+    });
+    log(`   Wave ${i + 1}: ${names.join(" | ")}`);
+  });
+
   log("--- Startup Check OK -----------------------------------------------");
   return { claudePath, useShell, sessions };
 }
@@ -504,25 +619,42 @@ function runStartupCheck() {
 function buildCombinedPrompt(sessionFile) {
   const raw = readFileSync(sessionFile, "utf8");
   const stripped = raw
-    .replace(/<!--\nSESSION OVERRIDE CONFIG[\s\S]*?-->\n?\n?/, "")
+    .replace(/<!--\r?\nSESSION OVERRIDE CONFIG[\s\S]*?-->\r?\n?\r?\n?/g, "")
     .replace(/^```json\s*\n[\s\S]*?\n```\s*\n?/, "");
 
+  let combined;
   if (!existsSync(CLAUDE_MD)) {
     log("CLAUDE.md not found — continuing without global context", "WARN");
-    return stripped;
+    combined = stripped;
+  } else {
+    const global = readFileSync(CLAUDE_MD, "utf8");
+    combined = [
+      "<!-- GLOBAL AGENT CONTEXT — CLAUDE.md -->",
+      "",
+      global,
+      "",
+      "<!-- SESSION PROMPTS — execute all sequentially -->",
+      "",
+      stripped,
+    ].join("\n");
   }
 
-  const global = readFileSync(CLAUDE_MD, "utf8");
+  // Save generated prompt if enabled
+  if (getSetting("runner", "saveGeneratedPrompts")) {
+    try {
+      const promptsDir = join(LOG_DIR, "generated-prompts");
+      ensureDir(promptsDir);
+      const sessionName = sessionFile.replace(/^.*[/\\]/, "").replace(".md", "");
+      const ts = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+      const outPath = join(promptsDir, `${sessionName}-${ts}.md`);
+      writeFileSync(outPath, combined, "utf8");
+      log(`Saved generated prompt → ${outPath}`);
+    } catch (err) {
+      log(`Could not save generated prompt: ${err.message}`, "WARN");
+    }
+  }
 
-  return [
-    "<!-- GLOBAL AGENT CONTEXT — CLAUDE.md -->",
-    "",
-    global,
-    "",
-    "<!-- SESSION PROMPTS — execute all sequentially -->",
-    "",
-    stripped,
-  ].join("\n");
+  return combined;
 }
 
 // ########################################################################### Post-Session Verification ###########################################################################
@@ -738,6 +870,31 @@ function diffWithPreviousRun(sessionName, currentOutput) {
 
 let activeChild = null;
 
+// ── Live status tracking ────────────────────────────────────────────────────
+const LIVE_STATUS_FILE = join(LOG_DIR, ".live-session.json");
+const LIVE_OUTPUT_FILE = join(LOG_DIR, ".live-output.txt");
+const LIVE_STATUS_THROTTLE_MS = 2000;
+let lastLiveStatusWrite = 0;
+
+function writeLiveStatus(data) {
+  const now = Date.now();
+  if (now - lastLiveStatusWrite < LIVE_STATUS_THROTTLE_MS) return;
+  lastLiveStatusWrite = now;
+  try {
+    writeFileSync(LIVE_STATUS_FILE, JSON.stringify(data, null, 2));
+  } catch { /* non-critical */ }
+}
+
+function clearLiveStatus() {
+  try { writeFileSync(LIVE_STATUS_FILE, JSON.stringify({ session: null })); } catch { /* ignore */ }
+}
+
+function appendLiveOutput(chunk) {
+  try {
+    writeFileSync(LIVE_OUTPUT_FILE, chunk, { flag: "a" });
+  } catch { /* non-critical */ }
+}
+
 function runSessionAsync(session, claudePath, useShell) {
   const { name, file, prompts } = session;
 
@@ -770,7 +927,24 @@ function runSessionAsync(session, claudePath, useShell) {
 
   const startTime = Date.now();
 
+  // Initialize live tracking files
+  try { writeFileSync(LIVE_OUTPUT_FILE, ""); } catch { /* ignore */ }
+  const liveStatus = {
+    session: name,
+    totalPrompts: prompts.length,
+    promptLabels: prompts.map((p) => p.label),
+    completedPrompts: [],
+    startedAt: new Date().toISOString(),
+    model: sessionModel,
+    lastOutputAt: null,
+    outputBytes: 0,
+  };
+  lastLiveStatusWrite = 0; // force first write
+  writeLiveStatus(liveStatus);
+
   return new Promise((resolve) => {
+    // Add both workspace and parent project dir so Claude can access the full codebase
+    const parentDir = dirname(WORK_DIR);
     const cliArgs = [
       "--print",
       "--model", sessionModel,
@@ -778,6 +952,7 @@ function runSessionAsync(session, claudePath, useShell) {
       "--output-format", "text",
       "--verbose",
       "--add-dir", WORK_DIR,
+      "--add-dir", parentDir,
     ];
     if (getSetting("runner", "skipPermissions")) {
       cliArgs.push("--dangerously-skip-permissions");
@@ -822,6 +997,11 @@ function runSessionAsync(session, claudePath, useShell) {
       const chunk = data.toString();
       stdout += chunk;
 
+      // Live output tracking
+      appendLiveOutput(chunk);
+      liveStatus.lastOutputAt = new Date().toISOString();
+      liveStatus.outputBytes = stdout.length;
+
       // Detect prompt completion markers
       const markerRegex = /### PROMPT (\d+) COMPLETED/g;
       let match;
@@ -829,6 +1009,7 @@ function runSessionAsync(session, claudePath, useShell) {
         const promptNum = parseInt(match[1], 10);
         if (!completedPrompts.has(promptNum)) {
           completedPrompts.add(promptNum);
+          liveStatus.completedPrompts = [...completedPrompts].sort((a, b) => a - b);
           const elapsed = Date.now() - startTime;
           log(`${name}: Prompt ${promptNum} completed at ${formatDuration(elapsed)}`);
 
@@ -866,6 +1047,9 @@ function runSessionAsync(session, claudePath, useShell) {
           } catch (err) { console.warn("[run-sessions] Prompt checkpoint save failed:", err.message); }
         }
       }
+
+      // Throttled live status write
+      writeLiveStatus(liveStatus);
     });
 
     proc.stderr.on("data", (data) => {
@@ -876,6 +1060,9 @@ function runSessionAsync(session, claudePath, useShell) {
       clearTimeout(timeoutTimer);
       clearTimeout(warningTimer);
       activeChild = null;
+
+      // Clear live status
+      clearLiveStatus();
 
       const durationMs = Date.now() - startTime;
 
@@ -979,6 +1166,17 @@ function setupGracefulShutdown() {
 
 async function main() {
   setupGracefulShutdown();
+
+  // Ensure all workspace directories exist inside workDir BEFORE startup check
+  const workspaceDirs = [
+    // Agent communication hub
+    "tasks", "plans", "inbox", "status", "review", "locks", "Learnings", "Agents",
+    // Bot runtime data
+    "Sessions", "Logs", "Security", "Archive",
+  ];
+  for (const sub of workspaceDirs) {
+    ensureDir(join(WORK_DIR, sub));
+  }
 
   if (RESET_FLAG) {
     writeFileSync(
@@ -1182,6 +1380,9 @@ async function main() {
       }
       log(`${sessionName}: All dependencies met (${session.dependsOn.join(", ")})`);
     }
+
+    // waitForFile — poll for required files before session starts
+    await waitForFiles(session);
 
     // Notify session start
     const heaviest = [...session.prompts].sort(

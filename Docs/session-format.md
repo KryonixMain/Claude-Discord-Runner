@@ -73,11 +73,11 @@ SESSION OVERRIDE CONFIG
 {
   "session": {
     "pauseAfterMs": 3600000,
-    "defaultModel": "claude-opus-4-5",
+    "defaultModel": "claude-opus-4-6",
     "dependsOn": ["Session1"]
   },
   "prompts": {
-    "1": { "model": "claude-opus-4-5", "maxTurns": 80, "timeoutMs": 7200000 },
+    "1": { "model": "claude-opus-4-6", "maxTurns": 80, "timeoutMs": 7200000 },
     "2": { "model": "claude-sonnet-4-5", "maxTurns": 25, "timeoutMs": 1800000 }
   }
 }
@@ -275,12 +275,12 @@ SESSION OVERRIDE CONFIG
 {
   "session": {
     "pauseAfterMs": 1800000,
-    "defaultModel": "claude-opus-4-5"
+    "defaultModel": "claude-opus-4-6"
   },
   "prompts": {
-    "1": { "model": "claude-opus-4-5", "maxTurns": 80, "timeoutMs": 7200000 },
-    "2": { "model": "claude-opus-4-5", "maxTurns": 60, "timeoutMs": 5400000 },
-    "3": { "model": "claude-opus-4-5", "maxTurns": 40, "timeoutMs": 3600000 },
+    "1": { "model": "claude-opus-4-6", "maxTurns": 80, "timeoutMs": 7200000 },
+    "2": { "model": "claude-opus-4-6", "maxTurns": 60, "timeoutMs": 5400000 },
+    "3": { "model": "claude-opus-4-6", "maxTurns": 40, "timeoutMs": 3600000 },
     "4": { "model": "claude-sonnet-4-5", "maxTurns": 25, "timeoutMs": 1800000 }
   }
 }

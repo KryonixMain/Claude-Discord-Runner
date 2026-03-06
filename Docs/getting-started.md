@@ -74,7 +74,7 @@ Edit `bot/settings.json`:
     "locale": "en-US"
   },
   "runner": {
-    "defaultModel": "claude-opus-4-5",
+    "defaultModel": "claude-opus-4-6",
     "maxTurns": 200,
     "pauseMinutes": 360,
     "claudePlan": "max20",

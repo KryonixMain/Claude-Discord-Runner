@@ -4,14 +4,10 @@ import { parseLatestChangelog, parseVersionFromContent, compareSemver, parseLate
 const RAW_CHANGELOG_URL =
   "https://raw.githubusercontent.com/KryonixMain/Claude-Discord-Runner/main/CHANGELOG.md";
 
-/**
- * Fetch the CHANGELOG.md from the GitHub repo (raw content).
- * Returns the raw text or null on failure.
- */
+
 function fetchRemoteChangelog() {
   return new Promise((resolve) => {
     const req = get(RAW_CHANGELOG_URL, { timeout: 10_000 }, (res) => {
-      // Follow redirects (GitHub raw sometimes redirects)
       if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
         get(res.headers.location, { timeout: 10_000 }, (res2) => {
           let data = "";
@@ -41,11 +37,6 @@ function fetchRemoteChangelog() {
   });
 }
 
-/**
- * Check if a newer version is available on GitHub.
- * Returns { updateAvailable, localVersion, remoteVersion, remoteChangelog }
- * or { updateAvailable: false, error } on failure.
- */
 export async function checkForUpdate() {
   const local = parseLatestChangelog();
   if (!local) {

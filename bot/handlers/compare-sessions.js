@@ -1,6 +1,6 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "fs";
 import { join } from "path";
-import { EmbedBuilder, AttachmentBuilder } from "discord.js";
+import { EmbedBuilder } from "discord.js";
 import { ARCHIVE_DIR } from "../lib/paths.js";
 
 function listArchives() {
@@ -28,7 +28,6 @@ export async function handleCompareSessions(interaction) {
     });
   }
 
-  // If archive name provided, use it as one of the two; otherwise use the two most recent
   let archiveA, archiveB;
   if (archiveName) {
     const match = archives.find((a) => a.includes(archiveName));
@@ -43,12 +42,11 @@ export async function handleCompareSessions(interaction) {
         ephemeral: true,
       });
     }
-    // Compare specified archive against the most recent one (or the one before it)
     archiveB = match;
     archiveA = archives.find((a) => a !== match) ?? archives[0];
   } else {
-    archiveA = archives[0]; // most recent
-    archiveB = archives[1]; // second most recent
+    archiveA = archives[0];
+    archiveB = archives[1];
   }
 
   await interaction.deferReply();
@@ -56,7 +54,6 @@ export async function handleCompareSessions(interaction) {
   const sessionFile = `Session${sessionNum}.md`;
   const logFile = `run-Session${sessionNum}.log`;
 
-  // Try to find session outputs in both archives
   const pathsToCheck = [
     { dir: "Logs", file: logFile },
     { dir: "Sessions", file: sessionFile },
@@ -79,7 +76,6 @@ export async function handleCompareSessions(interaction) {
     if (contentA === contentB) {
       results.push({ file: `${dir}/${file}`, status: "identical", diff: null });
     } else {
-      // Simple line-based diff
       const linesA = contentA.split("\n");
       const linesB = contentB.split("\n");
 
@@ -97,7 +93,6 @@ export async function handleCompareSessions(interaction) {
     }
   }
 
-  // Also compare progress files
   const progressFiles = [archiveA, archiveB].map((arch) => {
     const dir = join(ARCHIVE_DIR, arch);
     const files = readdirSync(dir).filter((f) => f.startsWith("progress-") && f.endsWith(".json"));
@@ -109,7 +104,6 @@ export async function handleCompareSessions(interaction) {
 
   const [progressA, progressB] = progressFiles;
 
-  // Build comparison embed
   const fileComparison = results.length > 0
     ? results.map((r) => {
         if (r.status === "identical") return `\`${r.file}\` — Identical`;
@@ -131,7 +125,6 @@ export async function handleCompareSessions(interaction) {
       { name: "Delta", value: String(sessionsA - sessionsB), inline: true },
     );
 
-    // Token comparison
     const tokensA = progressA?.sessionDetails
       ? Object.values(progressA.sessionDetails).reduce((s, d) => s + (d.tokenUsage?.outputTokens ?? 0), 0)
       : 0;

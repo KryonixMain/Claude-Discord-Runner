@@ -18,105 +18,299 @@
     </div>
   </header>
 
+  <!-- Tab Navigation -->
+  <nav class="tabs">
+    <button class="tab active" data-tab="overview">Overview</button>
+    <button class="tab" data-tab="timeouts">Timeouts</button>
+    <button class="tab" data-tab="analytics">Analytics</button>
+    <button class="tab" data-tab="archives">Archives</button>
+    <button class="tab" data-tab="prompts">Prompts</button>
+    <button class="tab" data-tab="audit">Audit Log</button>
+    <button class="tab" data-tab="settings">Settings</button>
+  </nav>
+
   <main>
-    <!-- Status Cards -->
-    <section class="cards">
-      <div class="card">
-        <div class="card-label">Status</div>
-        <div class="card-value" id="card-status">—</div>
-      </div>
-      <div class="card">
-        <div class="card-label">Progress</div>
-        <div class="card-value" id="card-progress">—</div>
-        <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
-      </div>
-      <div class="card">
-        <div class="card-label">Model</div>
-        <div class="card-value" id="card-model">—</div>
-      </div>
-      <div class="card">
-        <div class="card-label">Plan</div>
-        <div class="card-value" id="card-plan">—</div>
-      </div>
-    </section>
+    <!-- ═══════════════ TAB: Overview ═══════════════ -->
+    <div class="tab-content active" id="tab-overview">
+      <!-- Status Cards -->
+      <section class="cards">
+        <div class="card">
+          <div class="card-label">Status</div>
+          <div class="card-value" id="card-status">—</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Progress</div>
+          <div class="card-value" id="card-progress">—</div>
+          <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+        </div>
+        <div class="card">
+          <div class="card-label">Model</div>
+          <div class="card-value" id="card-model">—</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Plan</div>
+          <div class="card-value" id="card-plan">—</div>
+        </div>
+      </section>
 
-    <!-- Command Buttons -->
-    <section class="commands">
-      <h2>Commands</h2>
-      <div class="btn-group">
-        <button class="btn btn-green"  data-cmd="start"        id="btn-start">Start</button>
-        <button class="btn btn-red"    data-cmd="stop"         id="btn-stop">Stop</button>
-        <button class="btn btn-yellow" data-cmd="pause"        id="btn-pause">Pause</button>
-        <button class="btn btn-green"  data-cmd="resume"       id="btn-resume">Resume</button>
-        <button class="btn btn-blue"   data-cmd="restart"      id="btn-restart">Restart</button>
-        <button class="btn btn-yellow" data-cmd="start-reset"  id="btn-reset-start">Start (Reset)</button>
-        <button class="btn btn-purple" data-cmd="security-fix" id="btn-security">Security Fix</button>
-      </div>
-      <div id="command-feedback" class="feedback hidden"></div>
-    </section>
+      <!-- Command Buttons -->
+      <section class="commands">
+        <h2>Commands</h2>
+        <div class="btn-group">
+          <button class="btn btn-green"  data-cmd="start"        id="btn-start">Start</button>
+          <button class="btn btn-red"    data-cmd="stop"         id="btn-stop">Stop</button>
+          <button class="btn btn-yellow" data-cmd="pause"        id="btn-pause">Pause</button>
+          <button class="btn btn-green"  data-cmd="resume"       id="btn-resume">Resume</button>
+          <button class="btn btn-blue"   data-cmd="restart"      id="btn-restart">Restart</button>
+          <button class="btn btn-yellow" data-cmd="start-reset"  id="btn-reset-start">Start (Reset)</button>
+          <button class="btn btn-purple" data-cmd="security-fix" id="btn-security">Security Fix</button>
+        </div>
+        <div id="command-feedback" class="feedback hidden"></div>
+      </section>
 
-    <!-- Two-column layout -->
-    <div class="columns">
-      <!-- Sessions -->
+      <!-- Live Progress (visible only during active session) -->
+      <section class="panel live-progress-panel" id="live-progress" style="display:none">
+        <div class="live-progress-header">
+          <span class="live-indicator"></span>
+          <h2 id="live-session-name">—</h2>
+          <span class="live-model" id="live-model"></span>
+        </div>
+        <div class="live-prompt-info">
+          <span id="live-prompt-label">Prompt 0 / 0</span>
+          <span id="live-elapsed" class="muted"></span>
+        </div>
+        <div class="progress-bar live-prompt-bar">
+          <div class="progress-fill" id="live-prompt-fill"></div>
+        </div>
+        <div class="live-output-size muted" id="live-output-size"></div>
+      </section>
+
+      <!-- Two-column layout -->
+      <div class="columns">
+        <!-- Sessions -->
+        <section class="panel">
+          <h2>Sessions</h2>
+          <div class="table-wrap">
+            <table id="sessions-table">
+              <thead>
+                <tr>
+                  <th></th>
+                  <th>Session</th>
+                  <th>Prompts</th>
+                  <th>Tokens (est.)</th>
+                  <th>Duration</th>
+                </tr>
+              </thead>
+              <tbody id="sessions-body">
+                <tr><td colspan="5" class="muted">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div id="token-budget" class="budget-bar hidden">
+            <div class="budget-label"><span id="budget-used">0</span> / <span id="budget-total">0</span> tokens</div>
+            <div class="progress-bar"><div class="progress-fill budget-fill" id="budget-fill"></div></div>
+            <div class="budget-meta" id="budget-meta"></div>
+          </div>
+        </section>
+
+        <!-- Logs -->
+        <section class="panel">
+          <h2>
+            Logs
+            <button class="btn btn-sm btn-blue" id="btn-refresh-logs">Refresh</button>
+          </h2>
+          <pre id="log-output" class="log-box">Loading...</pre>
+        </section>
+      </div>
+
+      <!-- Claude Output (live) -->
+      <section class="panel" id="claude-output-panel" style="display:none">
+        <h2>
+          Claude Output
+          <span class="live-indicator" id="claude-output-indicator"></span>
+        </h2>
+        <pre id="claude-output" class="log-box claude-output-box">Waiting for active session...</pre>
+      </section>
+
+      <!-- Security + Git -->
+      <div class="columns">
+        <section class="panel">
+          <h2>Security</h2>
+          <div id="security-content" class="muted">Loading...</div>
+        </section>
+        <section class="panel">
+          <h2>Git Changes</h2>
+          <div id="git-content" class="muted">Loading...</div>
+        </section>
+      </div>
+    </div>
+
+    <!-- ═══════════════ TAB: Timeouts ═══════════════ -->
+    <div class="tab-content" id="tab-timeouts">
+      <!-- Global Pause Config -->
       <section class="panel">
-        <h2>Sessions</h2>
+        <h2>Global Pause Configuration</h2>
+        <p class="hint">
+          Default wait time between all sessions. Per-session overrides take precedence.
+        </p>
+        <div class="global-pause-config">
+          <label>Global Pause (min):</label>
+          <input type="number" id="global-pause-input" placeholder="Loading..." min="0" max="360">
+          <button class="btn btn-sm btn-blue" id="btn-save-global-pause">Save</button>
+          <span id="global-pause-feedback" class="global-pause-feedback"></span>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Timeout &amp; Pause — Per Session</h2>
+        <p class="hint">
+          <strong>Timeout</strong> = max execution time per prompt (process is killed on exceed)<br>
+          <strong>Pause</strong> = wait time after a session (rate-limit buffer, not execution time)<br>
+          <strong>Per-Prompt Timeout</strong> = individual timeout per prompt (overrides session timeout)
+        </p>
+        <div id="timeouts-content">Loading...</div>
+        <div id="timeouts-summary" class="timeouts-summary hidden"></div>
+      </section>
+    </div>
+
+    <!-- ═══════════════ TAB: Analytics ═══════════════ -->
+    <div class="tab-content" id="tab-analytics">
+      <section class="cards" id="analytics-cards">
+        <div class="card">
+          <div class="card-label">Total Runs</div>
+          <div class="card-value" id="stat-total-runs">—</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Total Sessions</div>
+          <div class="card-value" id="stat-total-sessions">—</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Success Rate</div>
+          <div class="card-value" id="stat-success-rate">—</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Avg. Duration</div>
+          <div class="card-value" id="stat-avg-duration">—</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Total Input Tokens</div>
+          <div class="card-value" id="stat-input-tokens">—</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Total Output Tokens</div>
+          <div class="card-value" id="stat-output-tokens">—</div>
+        </div>
+      </section>
+
+      <div class="columns">
+        <section class="panel">
+          <h2>Success / Failure</h2>
+          <div id="analytics-success-chart" class="chart-container"></div>
+        </section>
+        <section class="panel">
+          <h2>Run Duration History</h2>
+          <div id="analytics-duration-chart" class="chart-container"></div>
+        </section>
+      </div>
+
+      <section class="panel">
+        <h2>Run History</h2>
         <div class="table-wrap">
-          <table id="sessions-table">
+          <table>
             <thead>
               <tr>
-                <th></th>
-                <th>Session</th>
-                <th>Prompts</th>
-                <th>Tokens (est.)</th>
-                <th>Completed</th>
+                <th>Run</th>
+                <th>Date</th>
+                <th>Sessions</th>
+                <th>Success</th>
+                <th>Failed</th>
                 <th>Duration</th>
+                <th>Tokens (out)</th>
+                <th>Model</th>
               </tr>
             </thead>
-            <tbody id="sessions-body">
-              <tr><td colspan="6" class="muted">Loading...</td></tr>
+            <tbody id="analytics-runs-body">
+              <tr><td colspan="8" class="muted">Loading...</td></tr>
             </tbody>
           </table>
         </div>
-        <!-- Token Budget -->
-        <div id="token-budget" class="budget-bar hidden">
-          <div class="budget-label"><span id="budget-used">0</span> / <span id="budget-total">0</span> tokens</div>
-          <div class="progress-bar"><div class="progress-fill budget-fill" id="budget-fill"></div></div>
-          <div class="budget-meta" id="budget-meta"></div>
-        </div>
-      </section>
-
-      <!-- Logs -->
-      <section class="panel">
-        <h2>
-          Logs
-          <button class="btn btn-sm btn-blue" id="btn-refresh-logs">Refresh</button>
-        </h2>
-        <pre id="log-output" class="log-box">Loading...</pre>
       </section>
     </div>
 
-    <!-- Two-column: Security + Settings -->
-    <div class="columns">
+    <!-- ═══════════════ TAB: Archives ═══════════════ -->
+    <div class="tab-content" id="tab-archives">
       <section class="panel">
-        <h2>Security</h2>
-        <div id="security-content" class="muted">Loading...</div>
+        <h2>Archived Runs</h2>
+        <div id="archives-content">Loading...</div>
       </section>
+    </div>
 
+    <!-- ═══════════════ TAB: Prompts ═══════════════ -->
+    <div class="tab-content" id="tab-prompts">
       <section class="panel">
-        <h2>Settings</h2>
+        <h2>
+          Generated Prompts
+          <button class="btn btn-sm btn-blue" id="btn-refresh-prompts">Refresh</button>
+        </h2>
+        <p class="hint">
+          When <strong>saveGeneratedPrompts</strong> is enabled, the combined prompt (CLAUDE.md + Session content) is saved before each session execution.
+        </p>
+        <div class="prompts-toggle-row">
+          <label class="security-toggle-label">
+            <input type="checkbox" id="prompts-enabled-toggle">
+            Save Generated Prompts
+          </label>
+          <span id="prompts-toggle-feedback" class="global-pause-feedback"></span>
+        </div>
+        <div id="prompts-list">Loading...</div>
+      </section>
+      <section class="panel" id="prompt-viewer-panel" style="display:none">
+        <h2>
+          Prompt Content
+          <button class="btn btn-sm btn-red" id="btn-close-prompt-viewer">Close</button>
+        </h2>
+        <div id="prompt-viewer-meta" class="prompt-viewer-meta"></div>
+        <pre id="prompt-viewer-content" class="log-box" style="max-height:600px"></pre>
+      </section>
+    </div>
+
+    <!-- ═══════════════ TAB: Audit ═══════════════ -->
+    <div class="tab-content" id="tab-audit">
+      <section class="panel">
+        <h2>
+          Command Audit Log
+          <button class="btn btn-sm btn-blue" id="btn-refresh-audit">Refresh</button>
+        </h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Command</th>
+                <th>Actor</th>
+                <th>Args</th>
+                <th>Outcome</th>
+              </tr>
+            </thead>
+            <tbody id="audit-body">
+              <tr><td colspan="5" class="muted">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <!-- ═══════════════ TAB: Settings ═══════════════ -->
+    <div class="tab-content" id="tab-settings">
+      <section class="panel">
+        <h2>Configuration</h2>
         <pre id="settings-content" class="settings-box">Loading...</pre>
       </section>
     </div>
-
-    <!-- Git Changes -->
-    <section class="panel">
-      <h2>Git Changes</h2>
-      <div id="git-content" class="muted">Loading...</div>
-    </section>
   </main>
 
   <footer>
-    <span>Claude Runner Dashboard</span>
+    <span>Claude Runner Dashboard v1.3.2.2</span>
     <span id="auto-refresh-label">Auto-refresh: <strong>5s</strong></span>
   </footer>
 

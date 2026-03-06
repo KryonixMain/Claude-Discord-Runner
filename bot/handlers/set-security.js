@@ -27,20 +27,19 @@ function writeOverrideBlock(content, config) {
   return block + "\n\n" + cleaned;
 }
 
-export async function handleSetTimeout(interaction) {
+export async function handleSetSecurity(interaction) {
   await interaction.deferReply();
 
   const sessionNum = interaction.options.getInteger("session");
-  const minutes    = interaction.options.getInteger("minutes");
-  const promptNum  = interaction.options.getInteger("prompt");
+  const enabled    = interaction.options.getBoolean("enabled");
   const filePath   = join(SESSION_DIR, `Session${sessionNum}.md`);
 
   if (!existsSync(filePath)) {
     await interaction.editReply({
       embeds: [
         new EmbedBuilder()
-          .setTitle("Session nicht gefunden")
-          .setDescription(`\`Session${sessionNum}.md\` existiert nicht.`)
+          .setTitle("Session not found")
+          .setDescription(`\`Session${sessionNum}.md\` does not exist.`)
           .setColor(0xed4245)
           .setTimestamp(),
       ],
@@ -51,44 +50,30 @@ export async function handleSetTimeout(interaction) {
   let content = readFileSync(filePath, "utf8");
   let config  = parseOverrideBlock(content) ?? { session: {}, prompts: {} };
   if (!config.session) config.session = {};
-  if (!config.prompts) config.prompts = {};
 
-  const timeoutMs = minutes * 60_000;
-  const fields = [{ name: "Session", value: `Session${sessionNum}`, inline: true }];
-
-  if (promptNum !== null) {
-    if (!config.prompts[String(promptNum)]) config.prompts[String(promptNum)] = {};
-    config.prompts[String(promptNum)].timeoutMs = timeoutMs;
-    fields.push(
-      { name: "Prompt", value: `Prompt ${promptNum}`, inline: true },
-      { name: "Timeout", value: `${minutes} min`, inline: true },
-    );
+  if (enabled) {
+    delete config.session.skipSecurityFix;
   } else {
-    config.session.timeoutMs = timeoutMs;
-    fields.push(
-      { name: "Scope", value: "Alle Prompts", inline: true },
-      { name: "Timeout", value: `${minutes} min`, inline: true },
-    );
+    config.session.skipSecurityFix = true;
   }
 
   content = writeOverrideBlock(content, config);
   writeFileSync(filePath, content);
 
-  const scopeDesc = promptNum !== null
-    ? `Timeout für **Prompt ${promptNum}** in Session${sessionNum} auf **${minutes} min** gesetzt.`
-    : `Timeout für **alle Prompts** in Session${sessionNum} auf **${minutes} min** gesetzt.`;
-
   await interaction.editReply({
     embeds: [
       new EmbedBuilder()
-        .setTitle("Timeout aktualisiert")
+        .setTitle("Security Fix Updated")
         .setDescription(
-          scopeDesc + "\n\n" +
-          "_Per-Prompt-Overrides haben Vorrang vor Session-Overrides._\n" +
-          "_Priorität: Prompt-Override > Session-Override > Default_",
+          enabled
+            ? `Auto security fix **enabled** for **Session${sessionNum}**.\n\nSecurity reports from this session will be included in the post-run fix pass.`
+            : `Auto security fix **disabled** for **Session${sessionNum}**.\n\nSecurity reports from this session will be skipped during the post-run fix pass.`,
         )
-        .addFields(...fields)
-        .setColor(0x57f287)
+        .addFields(
+          { name: "Session", value: `Session${sessionNum}`, inline: true },
+          { name: "Security Fix", value: enabled ? "Enabled" : "Disabled", inline: true },
+        )
+        .setColor(enabled ? 0x57f287 : 0xfee75c)
         .setTimestamp(),
     ],
   });

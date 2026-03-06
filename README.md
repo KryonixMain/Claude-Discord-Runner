@@ -266,10 +266,10 @@ SESSION OVERRIDE CONFIG
 {
   "session": {
     "pauseAfterMs": 3600000,
-    "defaultModel": "claude-opus-4-5"
+    "defaultModel": "claude-opus-4-6"
   },
   "prompts": {
-    "1": { "model": "claude-opus-4-5", "maxTurns": 80, "timeoutMs": 7200000 },
+    "1": { "model": "claude-opus-4-6", "maxTurns": 80, "timeoutMs": 7200000 },
     "2": { "model": "claude-sonnet-4-5", "maxTurns": 20, "timeoutMs": 1800000 }
   }
 }
@@ -528,7 +528,7 @@ Access at `http://localhost:3000` after starting the bot. Use `/dashboard` in Di
 
 | Key | Default | Description |
 |---|---|---|
-| `runner.defaultModel` | `"claude-opus-4-5"` | Model when no override is set |
+| `runner.defaultModel` | `"claude-opus-4-6"` | Model when no override is set |
 | `runner.maxTurns` | `200` | Max turns per session |
 | `runner.pauseMinutes` | `360` | Pause between sessions (minutes) |
 | `runner.claudePlan` | `"max20"` | Plan: `pro`, `max5`, or `max20` |
@@ -756,12 +756,12 @@ SESSION OVERRIDE CONFIG
 {
   "session": {
     "pauseAfterMs": 1800000,
-    "defaultModel": "claude-opus-4-5"
+    "defaultModel": "claude-opus-4-6"
   },
   "prompts": {
-    "1": { "model": "claude-opus-4-5", "maxTurns": 80, "timeoutMs": 7200000 },
-    "2": { "model": "claude-opus-4-5", "maxTurns": 60, "timeoutMs": 5400000 },
-    "3": { "model": "claude-opus-4-5", "maxTurns": 40, "timeoutMs": 3600000 },
+    "1": { "model": "claude-opus-4-6", "maxTurns": 80, "timeoutMs": 7200000 },
+    "2": { "model": "claude-opus-4-6", "maxTurns": 60, "timeoutMs": 5400000 },
+    "3": { "model": "claude-opus-4-6", "maxTurns": 40, "timeoutMs": 3600000 },
     "4": { "model": "claude-sonnet-4-5", "maxTurns": 25, "timeoutMs": 1800000 }
   }
 }
@@ -851,7 +851,7 @@ All other prompts default to:
 
 | | Default |
 |---|---|
-| Model | claude-opus-4-5 |
+| Model | claude-opus-4-6 |
 | Max Turns | 80 |
 | Timeout | 2 hours |
 

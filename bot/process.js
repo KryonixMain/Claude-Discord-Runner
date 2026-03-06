@@ -1,13 +1,13 @@
 import { spawn } from "child_process";
-import { existsSync, readFileSync, writeFileSync } from "fs";
-import { join } from "path";
+import { existsSync, readFileSync, writeFileSync, readdirSync } from "fs";
+import { join, dirname } from "path";
 import { EmbedBuilder } from "discord.js";
 import {
   getRunningProcess, setRunningProcess,
   getSecurityFixProcess, setSecurityFixProcess,
   isRunning, isSecurityFixRunning,
 } from "./state.js";
-import { BASE_DIR, PROJECT_DIR, SECURITY_DIR, CLAUDE_MD } from "./lib/paths.js";
+import { BASE_DIR, PROJECT_DIR, SESSION_DIR, SECURITY_DIR, CLAUDE_MD } from "./lib/paths.js";
 import { getSetting } from "./lib/settings.js";
 import { loadSecurityReports, countFindings, resolveClaudePath, loadState, killProcessGracefully, getWorkDir } from "./lib/helpers.js";
 import { archiveCompletedRun, pruneArchives } from "./lib/archive.js";
@@ -57,7 +57,6 @@ export async function startRunProcess(args = [], channel = null) {
     setRunningProcess(null);
   }
 
-  // Gather session info for notification
   const detected = detectSessions();
   const totalSessions = detected.sessions?.length ?? 0;
   const totalPrompts  = detected.sessions?.reduce((s, x) => s + x.promptCount, 0) ?? 0;
@@ -79,7 +78,6 @@ export async function startRunProcess(args = [], channel = null) {
     baseDir: BASE_DIR,
   });
 
-  // Rate-limit warning
   if (!detected.error && detected.sessions?.length > 0) {
     const planKey = getSetting("runner", "claudePlan");
     const calc    = calculateSessionTimeouts(detected.sessions, planKey);
@@ -103,8 +101,9 @@ export async function startRunProcess(args = [], channel = null) {
 
     const totalDurationMs = Date.now() - runStartedAt;
     const state           = loadState();
-    const sc              = getSetting("sessions", "count");
-    const allDone         = (state.completedSessions?.length ?? 0) >= sc;
+    const detected        = detectSessions();
+    const sc              = detected.sessions?.length ?? 0;
+    const allDone         = sc > 0 && (state.completedSessions?.length ?? 0) >= sc;
     const autoFix         = getSetting("runner", "autoSecurityFix");
     const doArchive       = getSetting("runner", "archiveOnComplete");
 
@@ -170,10 +169,40 @@ export async function startRunProcess(args = [], channel = null) {
   });
 }
 
+function getSkippedSessions() {
+  const skipped = new Set();
+  if (!existsSync(SESSION_DIR)) return skipped;
+  for (const f of readdirSync(SESSION_DIR).filter((f) => /^Session\d+\.md$/i.test(f))) {
+    const content = readFileSync(join(SESSION_DIR, f), "utf8");
+    const allMatches = [...content.matchAll(/<!--\r?\nSESSION OVERRIDE CONFIG\r?\n([\s\S]*?)-->/g)];
+    for (const m of allMatches) {
+      try {
+        const cfg = JSON.parse(m[1]);
+        if (cfg?.session?.skipSecurityFix === true) {
+          skipped.add(f.replace(".md", ""));
+          break;
+        }
+      } catch { /* ignore */ }
+    }
+  }
+  return skipped;
+}
+
 export function startSecurityFix(channel = null) {
   if (isSecurityFixRunning()) return;
 
-  const reports = loadSecurityReports();
+  const skippedSessions = getSkippedSessions();
+  const allReports = loadSecurityReports();
+  const reports = allReports.filter((r) => {
+    const sessionMatch = r.name.match(/security-report-(Session\d+)/i);
+    if (!sessionMatch) return true;
+    return !skippedSessions.has(sessionMatch[1]);
+  });
+
+  if (skippedSessions.size > 0) {
+    console.log(`[Bot] Security fix: skipping ${skippedSessions.size} session(s) with skipSecurityFix: ${[...skippedSessions].join(", ")}`);
+  }
+
   if (reports.length === 0) {
     console.log("[Bot] No security reports — skipping fix");
     if (getSetting("runner", "archiveOnComplete")) {
@@ -235,9 +264,11 @@ export function startSecurityFix(channel = null) {
   ].join("\n");
 
   const secWorkDir = getWorkDir();
+  const secParentDir = dirname(secWorkDir);
   const secCliArgs = [
     "--print", "--model", model, "--max-turns", "200",
-    "--output-format", "text", "--verbose", "--add-dir", secWorkDir,
+    "--output-format", "text", "--verbose",
+    "--add-dir", secWorkDir, "--add-dir", secParentDir,
   ];
   if (getSetting("runner", "skipPermissions")) {
     secCliArgs.push("--dangerously-skip-permissions");

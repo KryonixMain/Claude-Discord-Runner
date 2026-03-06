@@ -9,6 +9,7 @@ Logs/
 Security/
 Archive/
 .progress.json
+Sessions/
 
 # OS
 .DS_Store
@@ -23,3 +24,6 @@ Thumbs.db
 # Environment
 .env
 .env.*
+CLAUDE.md
+.gitignore
+package-lock.json

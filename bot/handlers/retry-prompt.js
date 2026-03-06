@@ -58,7 +58,6 @@ export async function handleRetryPrompt(interaction) {
 
   await interaction.deferReply();
 
-  // Build a prompt containing only the CLAUDE.md context + the specific prompt
   const globalCtx = existsSync(CLAUDE_MD) ? readFileSync(CLAUDE_MD, "utf8") : "";
   const combinedPrompt = [
     "<!-- GLOBAL AGENT CONTEXT — CLAUDE.md -->",
@@ -101,7 +100,6 @@ export async function handleRetryPrompt(interaction) {
   proc.stdin.write(combinedPrompt);
   proc.stdin.end();
 
-  // Timeout: 30 minutes for a single prompt retry
   const timeout = setTimeout(() => {
     if (proc.exitCode === null) proc.kill("SIGTERM");
   }, 30 * 60_000);
@@ -112,7 +110,6 @@ export async function handleRetryPrompt(interaction) {
     const durationMin = Math.floor(durationMs / 60_000);
     const durationSec = Math.floor((durationMs % 60_000) / 1000);
 
-    // Save output
     const outputFile = join(LOG_DIR, `Session${sessionNum}-Prompt${promptNum}.retry.md`);
     writeFileSync(outputFile, [
       `# Session ${sessionNum} — Prompt ${promptNum} — Retry Output`,
@@ -125,7 +122,6 @@ export async function handleRetryPrompt(interaction) {
       output || "(no output)",
     ].join("\n"));
 
-    // Update prompt checkpoint
     try {
       const state = loadState();
       if (!state.promptCheckpoints) state.promptCheckpoints = {};

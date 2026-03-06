@@ -60,7 +60,7 @@ Claude CLI execution settings.
 
 | Key | Type | Default | Description |
 |---|---|---|---|
-| `runner.defaultModel` | string | `"claude-opus-4-5"` | Default model when no per-session override is set. |
+| `runner.defaultModel` | string | `"claude-opus-4-6"` | Default model when no per-session override is set. |
 | `runner.maxTurns` | number | `200` | Maximum turns per Claude CLI invocation. |
 | `runner.pauseMinutes` | number | `360` | Minutes to pause between sessions (rate-limit buffer). |
 | `runner.claudePlan` | string | `"max20"` | Your Claude subscription: `"pro"`, `"max5"`, or `"max20"`. |
@@ -73,8 +73,8 @@ Claude CLI execution settings.
 
 | Model | ID | Best for |
 |---|---|---|
-| Claude Opus 4.5 | `claude-opus-4-5` | Complex coding, architecture, multi-file changes |
-| Claude Sonnet 4.5 | `claude-sonnet-4-5` | Lightweight tasks, documentation, simple edits |
+| Claude Opus 4.6 | `claude-opus-4-6` | Complex coding, architecture, multi-file changes |
+| Claude Sonnet 4.6 | `claude-sonnet-4-5` | Lightweight tasks, documentation, simple edits |
 
 ### Plan details
 
@@ -139,7 +139,7 @@ Optional post-session verification commands. Run automatically after each sessio
           "label": "Unit tests",
           "command": "npm",
           "args": ["test"],
-          "timeoutMs": 120000
+          "timeoutMs": 4200000
         }
       ],
       "autoStopAfter": 3
@@ -154,7 +154,7 @@ Optional post-session verification commands. Run automatically after each sessio
 | `commands[].label` | string | Display name for logs and reports. |
 | `commands[].command` | string | The executable to run. |
 | `commands[].args` | string[] | Arguments to pass. |
-| `commands[].timeoutMs` | number | Timeout per command (default: 120000). |
+| `commands[].timeoutMs` | number | Timeout per command (default: 4200000). |
 | `verification.autoStopAfter` | number | Stop the run after N consecutive verification failures. 0 = never stop. |
 
 ---
@@ -205,7 +205,7 @@ Optional safety limits on how many files Claude can change per session.
     }
   },
   "runner": {
-    "defaultModel": "claude-opus-4-5",
+    "defaultModel": "claude-opus-4-6",
     "maxTurns": 200,
     "pauseMinutes": 60,
     "autoSecurityFix": true,

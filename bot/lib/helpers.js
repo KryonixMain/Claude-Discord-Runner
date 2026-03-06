@@ -45,8 +45,6 @@ export function sessionKey(filePath) {
 }
 
 export function countFindings(content, level) {
-  // Match checklist items under the level header: "- [ ] ..." or "- [x] ..."
-  // Also count the section header itself as a structural match
   const levelPatterns = {
     CRITICAL: /^[ \t]*- \[[ x]\].*$/gm,
     WARNING:  /^[ \t]*- \[[ x]\].*$/gm,
@@ -54,7 +52,6 @@ export function countFindings(content, level) {
     FIXED:    /FIXED/g,
   };
 
-  // Strategy: find the section for this level, then count items in it
   const sectionRegex = new RegExp(`## ${level}[^\\n]*\\n([\\s\\S]*?)(?=\\n## |$)`, "g");
   let count = 0;
   let match;

@@ -41,10 +41,8 @@ function matchesPattern(filePath, patterns) {
   return patterns.some((pattern) => {
     const p = pattern.replace(/\\/g, "/");
     if (p.endsWith("/")) {
-      // Directory pattern — matches anything under it
       return normalized.startsWith(p) || normalized.includes(`/${p}`);
     }
-    // File pattern — exact match or filename match
     return normalized === p || normalized.endsWith(`/${p}`) || normalized.endsWith(p);
   });
 }
@@ -53,7 +51,6 @@ export function checkWritePermission(filePath, workDir) {
   const policy = getWritePolicy();
   const rel = relative(resolve(workDir), resolve(filePath)).replace(/\\/g, "/");
 
-  // Check deny list first
   if (matchesPattern(rel, policy.denyPaths)) {
     return {
       allowed: policy.enforceMode !== "block",
@@ -62,7 +59,6 @@ export function checkWritePermission(filePath, workDir) {
     };
   }
 
-  // Check read-only paths
   if (matchesPattern(rel, policy.readOnlyPaths)) {
     return {
       allowed: policy.enforceMode !== "block",
@@ -71,7 +67,6 @@ export function checkWritePermission(filePath, workDir) {
     };
   }
 
-  // Check allow list (if defined, only allowed paths are writable)
   if (policy.allowPaths.length > 0 && !matchesPattern(rel, policy.allowPaths)) {
     return {
       allowed: policy.enforceMode !== "block",
@@ -83,9 +78,6 @@ export function checkWritePermission(filePath, workDir) {
   return { allowed: true, reason: null, severity: null };
 }
 
-/**
- * Generate write policy rules for CLAUDE.md injection
- */
 export function generateWritePolicyBlock() {
   const policy = getWritePolicy();
 

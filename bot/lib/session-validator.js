@@ -18,20 +18,17 @@ export function validateSessionContent(content) {
   if (!VALIDATION_RULES.hasInstruction.re.test(stripped)) warnings.push(VALIDATION_RULES.hasInstruction.msg);
   if (!VALIDATION_RULES.hasPrompt.re.test(stripped))      errors.push(VALIDATION_RULES.hasPrompt.msg);
 
-  // Sequential prompt numbering
   const promptHeaders = [...stripped.matchAll(/^## Prompt\s+(\d+)\s*[—–-]/gm)].map((m) => parseInt(m[1]));
   promptHeaders.forEach((n, i) => {
     if (n !== i + 1)
       errors.push(`Prompt numbering not sequential: expected Prompt ${i + 1}, found Prompt ${n}`);
   });
 
-  // Separator coverage
   const separators = [...stripped.matchAll(/^---+\s*$/gm)];
   if (promptHeaders.length > 0 && separators.length < promptHeaders.length)
     warnings.push(`${promptHeaders.length} prompt(s) found but only ${separators.length} separator(s) (\`---\`) — last prompt may not be closed`);
 
-  // Override JSON validation
-  const overrideMatch = content.match(/<!--\nSESSION OVERRIDE CONFIG\n([\s\S]*?)-->/);
+  const overrideMatch = content.match(/<!--\r?\nSESSION OVERRIDE CONFIG\r?\n([\s\S]*?)-->/);
   if (overrideMatch) {
     try {
       const parsed = JSON.parse(overrideMatch[1]);
@@ -49,14 +46,12 @@ export function validateSessionContent(content) {
     }
   }
 
-  // Empty prompt bodies
   parseSessionFile(stripped).forEach((p, i) => {
     const body = p.text.replace(/^## Prompt[^\n]+\n/, "").replace(/^---+\s*$/m, "").trim();
     if (body.length < 10)
       errors.push(`Prompt ${i + 1} ("${p.title.slice(0, 40)}") appears to be empty`);
   });
 
-  // Security Agent check in CLAUDE.md
   if (existsSync(CLAUDE_MD)) {
     const md = readFileSync(CLAUDE_MD, "utf8");
     if (!(/security agent/i.test(md) && /\[SECURITY\]/i.test(md) && /security-report/i.test(md)))

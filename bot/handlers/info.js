@@ -64,7 +64,6 @@ export async function handleInfo(interaction) {
 
   const msg = await interaction.editReply({ embeds: [infoEmbed], components: [row] });
 
-  // Listen for the button click
   try {
     const btnInteraction = await msg.awaitMessageComponent({
       componentType: ComponentType.Button,
@@ -74,7 +73,6 @@ export async function handleInfo(interaction) {
 
     await btnInteraction.deferUpdate();
 
-    // Build the changelog embed
     let changelogText = changelog.body;
     if (changelogText.length > MAX_EMBED_DESC) {
       changelogText = changelogText.slice(0, MAX_EMBED_DESC - 20) + "\n\n*…truncated*";
@@ -86,7 +84,6 @@ export async function handleInfo(interaction) {
       .setColor(0x57f287)
       .setTimestamp();
 
-    // Disable the button after click
     const disabledRow = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId("info_show_changelog")
@@ -98,7 +95,6 @@ export async function handleInfo(interaction) {
     await interaction.editReply({ embeds: [infoEmbed], components: [disabledRow] });
     await btnInteraction.followUp({ embeds: [changelogEmbed], ephemeral: false });
   } catch {
-    // Timeout — disable the button
     const disabledRow = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId("info_show_changelog")

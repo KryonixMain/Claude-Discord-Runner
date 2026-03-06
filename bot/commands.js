@@ -34,9 +34,10 @@ export const commands = [
   new SlashCommandBuilder().setName("validate-sessions").setDescription("Validates all session files against the expected template structure"),
   new SlashCommandBuilder().setName("help").setDescription("Shows all available commands"),
   new SlashCommandBuilder().setName("info").setDescription("Shows version, system info, and changelog"),
-
-  // New commands
-  new SlashCommandBuilder().setName("set-timeout").setDescription("Set a per-session timeout override").addIntegerOption((o) => o.setName("session").setDescription("Session number").setRequired(true).setMinValue(1).setMaxValue(20)).addIntegerOption((o) => o.setName("minutes").setDescription("Timeout in minutes").setRequired(true).setMinValue(1).setMaxValue(600)),
+  new SlashCommandBuilder().setName("get-timeout").setDescription("Shows timeout quota and pause config for sessions").addIntegerOption((o) => o.setName("session").setDescription("Session number (omit for overview)").setRequired(false).setMinValue(1).setMaxValue(20)),
+  new SlashCommandBuilder().setName("set-timeout").setDescription("Set timeout per session or per prompt").addIntegerOption((o) => o.setName("session").setDescription("Session number").setRequired(true).setMinValue(1).setMaxValue(20)).addIntegerOption((o) => o.setName("minutes").setDescription("Timeout in minutes").setRequired(true).setMinValue(1).setMaxValue(600)).addIntegerOption((o) => o.setName("prompt").setDescription("Prompt number (omit for session-wide)").setRequired(false).setMinValue(1).setMaxValue(20)),
+  new SlashCommandBuilder().setName("set-pause").setDescription("Set pause between sessions").addIntegerOption((o) => o.setName("minutes").setDescription("Pause in minutes").setRequired(true).setMinValue(0).setMaxValue(360)).addIntegerOption((o) => o.setName("session").setDescription("Session number (omit for global default)").setRequired(false).setMinValue(1).setMaxValue(20)),
+  new SlashCommandBuilder().setName("set-security").setDescription("Toggle auto security fix per session").addIntegerOption((o) => o.setName("session").setDescription("Session number").setRequired(true).setMinValue(1).setMaxValue(20)).addBooleanOption((o) => o.setName("enabled").setDescription("Enable or disable security fix for this session").setRequired(true)),
   new SlashCommandBuilder().setName("pause").setDescription("Pause after the current session completes"),
   new SlashCommandBuilder().setName("resume").setDescription("Resume a paused run"),
   new SlashCommandBuilder().setName("retry").setDescription("Re-run a single failed/completed session").addIntegerOption((o) => o.setName("session").setDescription("Session number to retry").setRequired(true).setMinValue(1).setMaxValue(20)),
@@ -51,8 +52,6 @@ export const commands = [
   new SlashCommandBuilder().setName("watch").setDescription("Live-stream Claude output to Discord").addStringOption((o) => o.setName("action").setDescription("Start or stop watching").setRequired(false).addChoices({ name: "Start", value: "start" }, { name: "Stop", value: "stop" })),
   new SlashCommandBuilder().setName("dependency-graph").setDescription("Visualize session dependency relationships"),
   new SlashCommandBuilder().setName("setup-wizard").setDescription("Interactive setup — guides you through plan, model, and permissions"),
-
-  // Phase 2 commands
   new SlashCommandBuilder().setName("create-session").setDescription("AI-generate a session file from a task description").addStringOption((o) => o.setName("task").setDescription("Task description for the session").setRequired(true)),
   new SlashCommandBuilder().setName("estimate").setDescription("Detailed cost/time estimate for the current sessions"),
   new SlashCommandBuilder().setName("health").setDescription("Comprehensive runtime health check"),

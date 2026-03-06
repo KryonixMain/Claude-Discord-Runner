@@ -47,7 +47,6 @@ function validateField(value, schema, path) {
 
   if (value === undefined || value === null || value === "") {
     if (schema._optional) return { errors, warnings };
-    // Empty string is ok for optional string fields at top level
     if (schema._type === "string") return { errors, warnings };
     errors.push(`${path}: required field is missing`);
     return { errors, warnings };
@@ -58,14 +57,12 @@ function validateField(value, schema, path) {
       errors.push(`${path}: expected object, got ${typeof value}`);
       return { errors, warnings };
     }
-    // Validate known subfields
     for (const [key, subSchema] of Object.entries(schema)) {
       if (key.startsWith("_")) continue;
       const result = validateField(value[key], subSchema, `${path}.${key}`);
       errors.push(...result.errors);
       warnings.push(...result.warnings);
     }
-    // Warn about unknown keys
     for (const key of Object.keys(value)) {
       if (!schema[key] && !key.startsWith("_")) {
         warnings.push(`${path}.${key}: unknown setting key`);
@@ -96,8 +93,6 @@ function validateField(value, schema, path) {
   if (schema._enum && !schema._enum.includes(value)) {
     errors.push(`${path}: invalid value "${value}" — expected one of: ${schema._enum.join(", ")}`);
   }
-
-  // Validate webhook URLs format
   if (schema._type === "string" && value && path.toLowerCase().includes("webhook") && value.length > 0) {
     if (!value.startsWith("http://") && !value.startsWith("https://")) {
       warnings.push(`${path}: webhook URL should start with http:// or https://`);
@@ -121,7 +116,6 @@ export function validateConfig(settings) {
     warnings.push(...result.warnings);
   }
 
-  // Warn about top-level unknown keys
   for (const key of Object.keys(settings)) {
     if (!SCHEMA[key]) {
       warnings.push(`${key}: unknown top-level settings section`);

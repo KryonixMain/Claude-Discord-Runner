@@ -1,5 +1,5 @@
 import { spawn } from "child_process";
-import { existsSync, readdirSync, writeFileSync } from "fs";
+import { readdirSync, writeFileSync } from "fs";
 import { join } from "path";
 import { EmbedBuilder } from "discord.js";
 import { SESSION_DIR } from "../lib/paths.js";
@@ -120,7 +120,6 @@ export async function handleCreateSession(interaction) {
       });
     }
 
-    // Clean output — remove any markdown code fences wrapping the result
     let content = output.trim();
     if (content.startsWith("```")) {
       content = content.replace(/^```[^\n]*\n/, "").replace(/\n```\s*$/, "");
@@ -150,7 +149,6 @@ export async function handleCreateSession(interaction) {
     });
   });
 
-  // Safety timeout for the generation process
   setTimeout(() => {
     if (proc.exitCode === null) {
       proc.kill("SIGTERM");

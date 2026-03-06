@@ -35,7 +35,6 @@ export function checkBlastRadius(workDir) {
   const violations = [];
 
   try {
-    // Get git status for changed files
     const statusResult = spawnSync("git", ["status", "--porcelain"], {
       encoding: "utf8", cwd: workDir, timeout: 10_000,
     });
@@ -48,7 +47,6 @@ export function checkBlastRadius(workDir) {
     const changedFiles = lines.length;
     const deletedFiles = lines.filter((l) => l.startsWith("D ") || l.startsWith(" D")).length;
 
-    // Check max changed files
     if (changedFiles > config.maxChangedFiles) {
       violations.push({
         type: "MAX_CHANGED_FILES",
@@ -57,7 +55,6 @@ export function checkBlastRadius(workDir) {
       });
     }
 
-    // Check max deleted files
     if (deletedFiles > config.maxDeletedFiles) {
       violations.push({
         type: "MAX_DELETED_FILES",
@@ -66,7 +63,6 @@ export function checkBlastRadius(workDir) {
       });
     }
 
-    // Check forbidden paths
     const changedPaths = lines.map((l) => l.slice(3).trim());
     for (const forbidden of config.forbiddenPaths) {
       const touched = changedPaths.filter((p) => p.includes(forbidden));
@@ -80,7 +76,6 @@ export function checkBlastRadius(workDir) {
       }
     }
 
-    // Check deleted lines
     const diffResult = spawnSync("git", ["diff", "--stat"], {
       encoding: "utf8", cwd: workDir, timeout: 10_000,
     });

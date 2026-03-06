@@ -20,7 +20,6 @@ export function isSecurityFixRunning() {
   return securityFixProcess !== null && !securityFixProcess.killed;
 }
 
-// Pause
 export function isPaused()     { return paused; }
 export function setPaused(val) {
   paused = !!val;
@@ -34,7 +33,6 @@ export function waitForUnpause() {
   });
 }
 
-// Schedule
 export function getScheduledTimer()     { return scheduledTimer; }
 export function setScheduledTimer(t)    { scheduledTimer = t; }
 export function clearScheduledTimer() {
