@@ -4,6 +4,45 @@ All notable changes to Claude Runner are documented here.
 
 ---
 
+## [1.4.1] — 2026-03-06
+
+### Fix: Embed Overflow Pagination (`/detect-sessions`, `/estimate`)
+
+Discord limits messages to 10 embeds and 4096 chars per embed description. With many sessions, both `/detect-sessions` and `/estimate` crashed with `BASE_TYPE_MAX_LENGTH` error. Both now use button-based pagination.
+
+- `/detect-sessions`: 8 sessions per page (1 summary + 8 sessions + 1 footer = 10 embeds)
+- `/estimate`: each session gets its own embed instead of cramming all into one description; paginated with dynamic slot calculation (accounts for summary + optional warning embeds)
+- Previous/Next buttons for navigation, scoped to the invoking user
+- Buttons auto-disable after 5 minutes
+
+**Affected files:**
+- `bot/handlers/detect-sessions.js` — full rewrite with pagination
+- `bot/handlers/estimate.js` — full rewrite: one embed per session + pagination
+
+---
+
+## [1.4.0] — 2026-03-06
+
+### Increased Session Limit & Parallel Marked Experimental
+
+**Session limit raised from 20 to 50**
+- All Discord slash commands now accept session numbers up to 50 (previously 20)
+- Affected commands: `/new-session`, `/get-timeout`, `/set-timeout`, `/set-pause`, `/set-security`, `/retry`, `/override`, `/diff`, `/rollback`, `/compare-sessions`, `/retry-prompt`
+
+**Parallel mode marked as experimental**
+- `runner.parallel` is now labeled **[Experimental]** across the bot, CLI output, settings, and documentation
+- Warning: parallel wave-based execution may not work as expected in all scenarios
+- The feature remains functional but users are informed it is not fully stable
+
+**Affected files:**
+- `bot/commands.js` — max value 20→50, parallel setting labeled experimental
+- `bot/handlers/settings.js` — experimental label in `/settings show`
+- `run-sessions.js` — experimental warning in CLI banner
+- `README.md` — experimental note in settings table
+- `Docs/session-format.md` — experimental note in parallel section
+
+---
+
 ## [1.3.2] — 2026-03-04
 
 ### Fix: Duplicate Override Blocks on Every Start

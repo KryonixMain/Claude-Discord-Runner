@@ -533,7 +533,7 @@ Access at `http://localhost:3000` after starting the bot. Use `/dashboard` in Di
 | `runner.pauseMinutes` | `360` | Pause between sessions (minutes) |
 | `runner.claudePlan` | `"max20"` | Plan: `pro`, `max5`, or `max20` |
 | `runner.skipPermissions` | `true` | Pass `--dangerously-skip-permissions` to Claude CLI |
-| `runner.parallel` | `false` | Run independent sessions concurrently |
+| `runner.parallel` | `false` | **[Experimental]** Run independent sessions concurrently — may not work as expected |
 | `runner.autoSecurityFix` | `true` | Auto-run security fix after completion |
 | `runner.archiveOnComplete` | `true` | Auto-archive after successful run |
 | `runner.workDir` | `""` | Working directory for Claude (auto-set on /setup) |

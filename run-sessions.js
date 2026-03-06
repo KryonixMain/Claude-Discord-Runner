@@ -1213,7 +1213,7 @@ async function main() {
   log(`   Directory: ${PROJECT_DIR}`);
   log(`   Sessions: ${sessions.length} | Prompts: ${totalPrompts} | ${new Date().toLocaleString("en-US")}`);
   if (SESSION_FILTER !== null) log(`   Filtered to: Session${SESSION_FILTER}`);
-  if (parallelMode) log("   Mode: PARALLEL (independent sessions run concurrently)");
+  if (parallelMode) log("   Mode: PARALLEL [EXPERIMENTAL] (independent sessions run concurrently — may not work as expected)");
   log("================================================================");
 
   const state = loadState();

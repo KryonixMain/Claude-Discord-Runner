@@ -30,7 +30,7 @@ export async function handleSettings(interaction) {
       `**runner.pauseMinutes**       \`${s.runner.pauseMinutes}\``,
       `**runner.claudePlan**         \`${s.runner.claudePlan}\``,
       `**runner.skipPermissions**    \`${s.runner.skipPermissions}\``,
-      `**runner.parallel**           \`${s.runner.parallel ?? false}\``,
+      `**runner.parallel**           \`${s.runner.parallel ?? false}\` ⚠️ experimental`,
       `**runner.autoSecurityFix**    \`${s.runner.autoSecurityFix}\``,
       `**runner.archiveOnComplete**  \`${s.runner.archiveOnComplete}\``,
       `**runner.workDir**            \`${s.runner.workDir || "— (defaults to project root)"}\``,

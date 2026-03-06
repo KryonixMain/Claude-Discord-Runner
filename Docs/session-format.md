@@ -140,7 +140,7 @@ Sessions can declare dependencies on other sessions using the `dependsOn` field:
 
 When a session has unmet dependencies (those sessions haven't completed yet), it is skipped with a notification. This is useful when sessions can't run until prerequisite work is done.
 
-With parallel execution enabled, independent sessions (no dependencies or all dependencies met) can run concurrently.
+With parallel execution enabled (**experimental** — may not work as expected), independent sessions (no dependencies or all dependencies met) can run concurrently.
 
 ---
 
